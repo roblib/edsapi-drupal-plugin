@@ -1,0 +1,8 @@
+name = EBSCO Discovery Service
+description = Full-text articles and eBooks from EBSCOhost Discovery Service
+core = 7.x
+
+configure = admin/config/search/ebsco
+
+stylesheets[screen][] = css/ebsco.css
+scripts[] = js/ebsco.js
