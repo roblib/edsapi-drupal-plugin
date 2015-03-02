@@ -92,9 +92,6 @@ function ebsco_permission() {
         'administer ebsco' => array(
             'title' => t('Administer EBSCO')
         ),
-        'use ebsco' => array(
-            'title' => t('Use EBSCO')
-        )
     );
 }
 
