@@ -6,7 +6,7 @@
  *
  * @see template_preprocess_ebsco_results()
  *
- * Copyright [2014] [EBSCO Information Systems]
+ * Copyright [2014] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
