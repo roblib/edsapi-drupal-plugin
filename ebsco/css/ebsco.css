@@ -397,7 +397,7 @@
 
 /** Icons ***/
 
-.icon {
+.ebsco .icon {
     background: url("../images/sprites_32.png") no-repeat top left;
     height: 32px;
     line-height: 32px;
@@ -405,15 +405,15 @@
     padding: 0  0 0 36px !important;
 }
 
-.icon.ebook {
+.ebsco .icon.ebook {
     background-position: 0 0;
 }
 
-.icon.html {
+.ebsco .icon.html {
     background-position: 0 -42px;
 }
 
-.icon.pdf {
+.ebsco .icon.pdf {
     background-position: 0 -84px;
 }
 
