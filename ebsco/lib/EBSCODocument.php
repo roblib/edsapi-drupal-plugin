@@ -9,9 +9,9 @@
  * - displaying statistics about the search, etc
  *
  * PHP version 5
+  *
  *
- *
- * Copyright [2014] [EBSCO Information Services]
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.*
  */
 
 require_once 'EBSCOAPI.php';
@@ -73,6 +73,14 @@ class EBSCODocument
      * #global array of EBSCORecord objects
      */
     private $records = array();
+	
+    /**
+     * The array of EBSCORecord models returned by a Search API call
+     * #global array of RelatedRecords
+     */
+    private $relatedContent = array();
+
+    private $autoSuggestTerms = array();
 
     /**
      * The array of filters currently applied
@@ -85,6 +93,12 @@ class EBSCODocument
      * @global integer
      */ 
     private $limit = 10;
+	
+    /**
+     * Default level of data detail
+     * @global string
+     */ 
+    private $amount = 'brief';
 
     /**
      * Maximum number of links displayed by the pagination
@@ -166,9 +180,14 @@ class EBSCODocument
         'AllFields' => 'All Text',
         'Title'     => 'Title',
         'Author'    => 'Author',
-        'Subject'   => 'Subject terms'
+        'Subject'   => 'Subject terms',
+        'Source'   => 'Journal Title/Source',
+        'Abstract'   => 'Abstract',
+        'ISBN'   => 'ISBN',
+        'ISSN'   => 'ISSN'
     );
 
+	private $local_ips = "";
 
     /**
      * Constructor.
@@ -183,12 +202,14 @@ class EBSCODocument
             'profile'      => variable_get('ebsco_profile'),
             'interface'    => variable_get('ebsco_interface'),
             'organization' => variable_get('ebsco_organization'),
+            'local_ip_address' => variable_get('ebsco_local_ips'),
             'guest'        => variable_get('ebsco_guest'),
             'log'          => variable_get('ebsco_log')
         ));
 
         $this->params = $params ? $params : $_REQUEST;
         $this->limit = variable_get('ebsco_default_limit') ? variable_get('ebsco_default_limit') : $this->limit;
+        $this->amount = variable_get('ebsco_default_amount') ? variable_get('ebsco_default_amount') : $this->amount;
     }
 
 
@@ -226,7 +247,7 @@ class EBSCODocument
     public function search()
     {
         $search = array();
-
+		
         if (isset($this->params['lookfor']) && isset($this->params['type'])) {
             $search = array(
                 'lookfor' => $this->params['lookfor'],
@@ -242,15 +263,34 @@ class EBSCODocument
         $page = isset($this->params['page']) ? $this->params['page'] + 1 : 1;
         $limit = $this->limit;
         $sort = isset($this->params['sort']) ? $this->params['sort'] : 'relevance';
-        $amount = isset($this->params['amount']) ? $this->params['amount'] : 'detailed';
+        $amount = isset($this->params['amount']) ? $this->params['amount'] : 'brief'; //
         $mode = isset($this->params['mode']) ? $this->params['mode'] : 'all';
 
-        $this->results = $this->eds->apiSearch($search, $filter, $page, $limit, $sort, $amount, $mode);
-
-        if (isset($this->results['start'])) {
-            $this->results['start'] = $limit * ($page - 1);
-        }
-
+		
+		//check if research starters , EMP are active
+		$info = $this->info();
+		$rs=false;
+		$emp=false;
+		
+		if ($info["relatedContent"]){
+			foreach ($info["relatedContent"] as $related) {
+				if ( ($related["Type"] == "rs") and ($related["DefaultOn"] == "y")) {
+					$rs=true;
+				}
+				if ( ($related["Type"] == "emp") and ($related["DefaultOn"] == "y")) {
+					$emp=true;
+				}
+			}
+		}	
+		$autosug=false;
+		if ($info["didYouMean"]){
+			if ( $info["didYouMean"][0]["DefaultOn"] == "y") {
+				$autosug=true;
+			}
+		}
+		
+        $this->results = $this->eds->apiSearch($search, $filter, $page, $limit, $sort, $amount, $mode,$rs,$emp,$autosug);
+		
         return $this->results;
     }
 
@@ -277,6 +317,12 @@ class EBSCODocument
      */
     public function records()
     {
+		if ($this->record instanceof EBSCOException ) {
+			return null;
+		}		
+		if ($this->results instanceof EBSCOException ) {
+			return null;
+		}
         if (empty($this->records) && !(empty($this->results))) {
             foreach($this->results['documents'] as $result) {
                 $this->records[] = new EBSCORecord($result);
@@ -284,6 +330,26 @@ class EBSCODocument
         }
 
         return $this->records;
+    }
+    
+	
+    public function relatedContent()
+    {
+
+		if ($this->results instanceof EBSCOException ) {
+			return null;
+		}
+		$this->relatedContent = isset($this->results['relatedContent']) ? $this->results['relatedContent'] : array();
+		
+        return $this->relatedContent;
+    }	
+	
+    public function autoSuggestTerms()
+    {
+
+		$this->autoSuggestTerms = isset($this->results['autoSuggestTerms']) ? $this->results['autoSuggestTerms'] : null;
+		
+        return $this->autoSuggestTerms;
     }
 
 
@@ -295,11 +361,19 @@ class EBSCODocument
     public function pager()
     {
         $pager = null;
-        if ($this->has_records()) {
-            pager_default_initialize($this->record_count() / $this->limit, 1);
-            $pager = theme('pager', array('tags' => null, 'quantity' => self::$page_links));
-            $pager = preg_replace('/<li class="pager-last last">(.*)<\/li>/', '', $pager);
-        }
+		try 
+		{
+			if ($this->has_records()) {
+				pager_default_initialize($this->record_count() / $this->limit, 1);
+				$pager = theme('pager', array('tags' => null, 'quantity' => self::$page_links));
+				$pager = preg_replace('/<li class="pager-last last">(.*)<\/li>/', '', $pager);
+			}
+			
+		}
+		catch(Exception $e)
+		{
+			
+		}
         return $pager;
     }
 
@@ -395,18 +469,31 @@ class EBSCODocument
      */
     public function expanders()
     {
-        $actions = array();
-        $filters = $this->filters();
-        foreach($filters as $filter) {
-            $actions[] = $filter['action'];
-        }
-
-        $expanders = isset($this->info['expanders']) ? $this->info['expanders'] : array();
-        foreach($expanders as $key => $expander) {
-            if (in_array($expander['Action'], $actions)) {
-                $expanders[$key]['selected'] = true;
-            }
-        }
+		$expanders=array();
+		try
+		{
+			if ($this->info instanceof EBSCOException) 
+			{
+				return $expanders;
+			}
+			$actions = array();
+			$filters = $this->filters();
+			foreach($filters as $filter) {
+				$actions[] = $filter['action'];
+			}
+			
+			$expanders = isset($this->info['expanders']) ? $this->info['expanders'] : array();
+			foreach($expanders as $key => $expander) {
+				if (in_array($expander['Action'], $actions)) {
+					$expanders[$key]['selected'] = true;
+				}
+			}
+			
+		}
+		catch(Exception $e)
+		{
+			
+		}
 
         return $expanders;
     }
@@ -419,6 +506,10 @@ class EBSCODocument
      */
     public function facets()
     {
+		if ($this->results instanceof EBSCOException ) {
+			return array();
+		}		
+		
         $actions = array();
         foreach($this->filters as $filter) {
             $actions[] = $filter['action'];
@@ -494,6 +585,10 @@ class EBSCODocument
     public function limiters()
     {
         $actions = array(); $ids = array();
+		if ($this->info instanceof EBSCOException) 
+		{
+			return array();
+		}
         $filters = $this->filters();
         foreach($filters as $filter) {
             $actions[] = $filter['action'];
@@ -536,6 +631,9 @@ class EBSCODocument
      */
     public function record_count()
     {
+		if ($this->results instanceof EBSCOException ) {
+			return 0;
+		}		
         return !empty($this->results) ? $this->results['recordCount'] : 0;
     }
 
@@ -547,6 +645,9 @@ class EBSCODocument
      */
     public function record_end()
     {
+		if ($this->results instanceof EBSCOException ) {
+			return -1;
+		}		
         $count = !empty($this->results) ? count($this->results['documents']) : 0;
         $start = !empty($this->results) ? $this->results['start'] : 0;
         return $start + $count;
@@ -560,6 +661,9 @@ class EBSCODocument
      */
     public function record_start()
     {
+		if ($this->results instanceof EBSCOException ) {
+			return null;
+		}		
         return !empty($this->results) ? $this->results['start'] + 1 : 0;
     }
 
@@ -571,6 +675,9 @@ class EBSCODocument
      */
     public function search_time()
     {
+		if ($this->results instanceof EBSCOException ) {
+			return 0;
+		}	
         return !empty($this->results) &&
             isset($this->results['searchTime']) ? $this->results['searchTime'] : 0;
     }
@@ -644,6 +751,9 @@ class EBSCODocument
      */
     public function has_records()
     {
+		if ($this->results instanceof EBSCOException ) {
+			return false;
+		}		
         return !empty($this->results) && !empty($this->results['documents']);
     }
 
@@ -655,6 +765,9 @@ class EBSCODocument
      */
     public function search_create($query = null)
     {
+		if ($this->results instanceof EBSCOException ) {
+			return array();
+		}		
         $last_search = array();
         if (!empty($this->results)) {
             $results_identifiers = array();

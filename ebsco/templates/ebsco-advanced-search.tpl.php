@@ -5,8 +5,9 @@
  * Displays the advanced search form.
  *
  * @see template_preprocess_ebsco_advanced_search()
+  *
  *
- * Copyright [2014] [EBSCO Information Services]
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +19,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 ?>
 
@@ -46,6 +47,11 @@
           <option value="Title">Title</option>
           <option value="Author">Author</option>
           <option value="Subject">Subject terms</option>
+          <option value="Source">Journal Title/Source</option>
+          <option value="Abstract">Abstract</option>
+          <option value="ISBN">ISBN</option>
+          <option value="ISSN">ISSN</option>
+		  
         </select>
       </div>
       <div class="delete-search">

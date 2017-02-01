@@ -4,9 +4,9 @@
  * EBSCO EDS API class
  *
  * PHP version 5
+  *
  *
- *
- * Copyright [2014] [EBSCO Information Services]
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
+ *
  */
 
 require_once 'EBSCOConnector.php';
@@ -56,7 +57,6 @@ class EBSCOAPI
      */
     private $config;
 
-
     /**
      * VuFind search types mapped to EBSCO search types 
      * used for urls in search results / detailed result
@@ -69,7 +69,9 @@ class EBSCOAPI
         'Author'    => 'AU',
         'Source'    => 'SO',
         'Subject'   => 'SU',
-        'Title'     => 'TI'
+        'Title'     => 'TI',
+        'ISBN'     => 'IB',
+        'ISSN'     => 'IS'
     );
 
 
@@ -326,7 +328,6 @@ class EBSCOAPI
         );
 
         $response = $this->connector()->requestSessionToken($headers);
-
         // Raise the exception so that any code running this method should exit immediately
         if ($this->isError($response)) {
             return $response;
@@ -384,8 +385,7 @@ class EBSCOAPI
      * @access public
      */
     public function apiSearch($search, $filters,
-        $start = 1, $limit = 10, $sortBy = 'relevance', $amount = 'detailed', $mode = 'all'
-    ) {
+        $start = 1, $limit = 10, $sortBy = 'relevance', $amount = 'detailed', $mode = 'all', $rs=false, $emp=false,$autosuggest=false) {
         $query = array();
 
         // Basic search
@@ -411,7 +411,8 @@ class EBSCOAPI
             }
 
         // Advanced search
-        } else if(!empty($search['group'])) {
+        } 
+		else if(!empty($search['group'])) {
 
             $counter = 1;
             foreach ($search['group'] as $group) {
@@ -480,7 +481,13 @@ class EBSCOAPI
                 $groupId += 1;
             }
         }
+		
+		//2014-03-26 - new action to jump to page
+		if ($start>1) {
+			$query['action']="GoToPage(".$start.")";
+		}
 
+		
         // Add the sort option
         $sortBy = in_array($sortBy, self::$sort_options) ? $sortBy : self::$mapped_sort_options[$sortBy];
 
@@ -503,11 +510,33 @@ class EBSCOAPI
             /// Specifies whether or not to include facets
             'includefacets'  => 'y',
             'resultsperpage' => $limit,
-            'pagenumber'     => $start,
+            
+			//2014-03-26 RF
+			'pagenumber'     => $start,
+			//'pagenumber'     => 1,
             // Specifies whether or not to include highlighting in the search results
             'highlight'      => 'y'
         );
+		
+		if($autosuggest==true) {
+			$params["autosuggest"]="y";
+		}
 
+		if ($rs==true){
+			$params["relatedcontent"]="rs";
+		}
+
+		if ($emp==true){
+			if (isset($params["relatedcontent"])) {
+				$params["relatedcontent"].=",emp";
+			}
+			else
+			{
+				$params["relatedcontent"]="emp";
+			}
+		}
+		
+		
         $params = array_merge($params, $query);
 
         $result = $this->request('Search', $params);
@@ -551,11 +580,12 @@ class EBSCOAPI
         if ($result = $this->readSession('info')) {
             return $result;
         }
-
         $result = $this->request('Info');
+		
         if(!$this->isError($result)) {
             $this->writeSession('info', $result);
         }
+		
         return $result;
     }
 

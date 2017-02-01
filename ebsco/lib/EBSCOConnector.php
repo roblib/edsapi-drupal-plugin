@@ -3,8 +3,9 @@
 /**
  * EBSCOException class
  * Used when EBSCO API calls return error messages
+  *
  *
- * Copyright [2014] [EBSCO Information Services]
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 class EBSCOException extends Exception
 {
@@ -151,6 +152,12 @@ class EBSCOConnector
      */
     private $isGuest;
 
+    /**
+     * Contains the list of ip addresses
+     * @global string 
+     */
+    private $local_ip_address;
+
 
     /*
      * You can log HTTP_Request requests using this option
@@ -175,6 +182,7 @@ class EBSCOConnector
      *
      * @access public
      */
+	 
     public function __construct($config)
     {
         $this->password = $config['password'];
@@ -182,7 +190,8 @@ class EBSCOConnector
         $this->interfaceId = $config['interface'];
         $this->profileId = $config['profile'];
         $this->orgId = $config['organization'];
-        $this->isGuest = user_is_logged_in() ? 'n' : 'y';
+        $this->local_ip_address = $config['local_ip_address'];
+        $this->isGuest = (user_is_logged_in() || $this->isGuestIPAddress($_SERVER["REMOTE_ADDR"]))? 'n' : 'y';
         $this->logAPIRequests = ($config['log'] == 1);
         if ($this->logAPIRequests) {
             $writer = new Zend_Log_Writer_Stream('php://output');
@@ -191,6 +200,30 @@ class EBSCOConnector
     }
 
 
+    /**
+     * Detects if the user is authorized based on the IP address
+     *
+     * @return string
+     */
+    public function isGuestIPAddress($ipUser)
+    {
+		$s= $this->local_ip_address;
+		
+		if (trim($s)=="") {
+			return false;
+		}
+		//break records 
+		$m=explode(",",$s);
+		
+		foreach($m as $ip) {
+		  if ( strcmp(substr($ipUser,0,strlen(trim($ip))),trim($ip))==0)   {
+			// inside of ip address range of customer
+			return true;
+		  }
+		}		
+        return false;
+    }
+	
     /**
      * Public getter for private isGuest 
      *
@@ -305,8 +338,10 @@ BODY;
         $url = self::$end_point . '/Info';
 
         $response = $this->request($url, $params, $headers);
+
         return $response;
     }
+
 
 
     /**
@@ -343,6 +378,13 @@ BODY;
             }
         }
 
+		//add compression in case its not there
+
+		$headers = array_merge(
+			array('Accept-Encoding' => 'gzip,deflate'),
+			$headers
+		);
+		
         $options = array(
             'headers' => $headers,
             'method'  => $method,
@@ -352,12 +394,26 @@ BODY;
         // Send the request
         try {
             $response = drupal_http_request($url, $options);
+//print_r($url);
 //print_r($response);
+
             $code = $response->code;
-            switch ($code) {
+			if (isset($response->headers['content-encoding'])) {
+				if ($response->headers['content-encoding'] == 'gzip') {
+				  $response->data = gzinflate(substr($response->data, 10));
+				}
+				elseif ($response->headers['content-encoding'] == 'deflate') {
+				  $response->data = gzinflate($response->data);
+				}
+			}
+			switch ($code) {
                 case self::HTTP_OK:
-                    $xml_str = $response->data;
-                    try {
+					
+					$xml_str = $response->data;
+					
+					  try {
+						  // clean EMP namespace
+						$xml_str=str_replace(array("<a:","</a:"),array("<","</"),$xml_str);
                         $xml = simplexml_load_string($xml_str);
                         $return = $xml;
                     } catch(Exception $e) {
@@ -411,6 +467,8 @@ BODY;
                     break;
             }
         } catch (Exception $e) {
+             $message = $this->toString($client); // or $this->toString($response)
+             $this->logger->log($message, Zend_Log::ERR);
              $return = new EBSCOException($response);
         }
 

@@ -1,7 +1,8 @@
 /*
- * The styles for EBSCO module
+* The styles for EBSCO module
  *
- * Copyright [2014] [EBSCO Information Services]
+ *
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -397,7 +398,7 @@
 
 /** Icons ***/
 
-.ebsco .icon {
+.icon {
     background: url("../images/sprites_32.png") no-repeat top left;
     height: 32px;
     line-height: 32px;
@@ -405,15 +406,15 @@
     padding: 0  0 0 36px !important;
 }
 
-.ebsco .icon.ebook {
+.icon.ebook {
     background-position: 0 0;
 }
 
-.ebsco .icon.html {
+.icon.html {
     background-position: 0 -42px;
 }
 
-.ebsco .icon.pdf {
+.icon.pdf {
     background-position: 0 -84px;
 }
 
@@ -443,3 +444,101 @@
 .icon16.tick {
     background-position: 0 -171px;
 }
+
+
+/*  RS, EMP carousel */
+	#quote-carousel 
+	{
+	  padding: 0 10px 30px 10px;
+	  margin-top: 30px;
+	}
+
+	/* Control buttons  */
+	#quote-carousel .carousel-control
+	{
+	  background: none;
+	  color: #222;
+	  font-size: 2.3em;
+	  text-shadow: none;
+	  margin-top: 30px;
+	}
+	/* Previous button  */
+	#quote-carousel .carousel-control.left 
+	{
+	  left: -12px;
+	}
+	/* Next button  */
+	#quote-carousel .carousel-control.right 
+	{
+	  right: -12px !important;
+	}
+	/* Changes the position of the indicators */
+	#quote-carousel .carousel-indicators 
+	{
+	  right: 50%;
+	  top: auto;
+	  bottom: 0px;
+	  margin-right: -19px;
+	}
+	/* Changes the color of the indicators */
+	#quote-carousel .carousel-indicators li 
+	{
+	  background: #c0c0c0;
+	}
+	#quote-carousel .carousel-indicators .active 
+	{
+	  background: #333333;
+	}
+	#quote-carousel img
+	{
+	  width: 250px;
+	  height: 100px
+	}
+	/* End carousel */
+
+	.item blockquote {
+		border-left: none; 
+		margin: 0;
+	}
+
+	.item blockquote img {
+		margin-bottom: 10px;
+	}
+
+	.item blockquote p:before {
+		content: "\f10d";
+		font-family: 'Fontawesome';
+		float: left;
+		margin-right: 10px;
+	}
+
+	#relatedInformation img  { padding-right :10px;}
+	
+	.glyphicon {
+		position: relative;
+		top: 1px;
+		display: inline-block;
+		font-family: 'Glyphicons Halflings';
+		font-style: normal;
+		font-weight: 400;
+		line-height: 1;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+.carousel-control .glyphicon-chevron-right {
+    position: absolute;
+    top: 50%;
+    z-index: 5;
+    display: inline-block;
+}
+.carousel-control.left span, .carousel-control.right span {
+    background-color: #000;
+}	
+
+
+	h3.relatedTitle a{
+		font-size:24px;
+	}
+	
+
+	/* */ 

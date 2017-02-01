@@ -1,5 +1,5 @@
 name = EBSCO Discovery Service
-description = Full-text articles and eBooks from EBSCOhost Discovery Service
+description = Full-text articles and eBooks from EBSCO Discovery Service
 core = 7.x
 
 configure = admin/config/search/ebsco

@@ -7,7 +7,7 @@
  * PHP version 5
  *
  *
- * Copyright [2014] [EBSCO Information Services]
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,15 +65,20 @@ class EBSCOResponse
     {
         if (!empty($this->response->AuthToken)) {
             return $this->buildAuthenticationToken();
-        } else if (!empty($this->response->SessionToken)) {
+        } 
+		else if (!empty($this->response->SessionToken)) {
             return (string) $this->response->SessionToken;
-        } else if (!empty($this->response->SearchResult)) {
+        } 
+		else if (!empty($this->response->SearchResult)) {
             return $this->buildSearch();
-        } else if(!empty($this->response->Record)) {
+        } 
+		else if(!empty($this->response->Record)) {
             return $this->buildRetrieve();
-        } else if(!empty($this->response->AvailableSearchCriteria)) {
+        } 
+		else if(!empty($this->response->AvailableSearchCriteria)) {
             return $this->buildInfo();
-        } else { // Should not happen, it may be an exception
+        } 
+		else { // Should not happen, it may be an exception
             return $this->response;
         }
     }
@@ -119,13 +124,29 @@ class EBSCOResponse
             $records = $this->buildRecords();
             $facets = $this->buildFacets();
         }
+			
+		// research Starters & emp
+		$relatedC=null;
+		if ($this->response->SearchResult->RelatedContent) {
+			$result =json_decode(json_encode($this->response->SearchResult->RelatedContent), TRUE);;
+			$relatedC = $result;
+		}
 
+		//did you mean / auto suggest
+		$autoSuggestTerms=null;
+		if ($this->response->SearchResult->AutoSuggestedTerms) {
+			$result =json_decode(json_encode($this->response->SearchResult->AutoSuggestedTerms), TRUE);;
+			$autoSuggestTerms = $result;
+		}
+		
         $results = array(
             'recordCount' => $hits,
             'searchTime'  => $searchTime,
             'numFound'    => $hits,
             'start'       => 0,
             'documents'   => $records,
+            'relatedContent'   => $relatedC,
+            'autoSuggestTerms'   => $autoSuggestTerms,
             'facets'      => $facets
         );
 
@@ -149,7 +170,8 @@ class EBSCOResponse
         $records = $this->response->SearchResult->Data->Records->Record;
         foreach ($records as $record) {
             $result = array();
-
+			//var_dump($record);
+			
             $result['ResultId'] = $record->ResultId ? (integer) $record->ResultId : '';
             $result['DbId'] = $record->Header->DbId ? (string) $record->Header->DbId : '';
             $result['DbLabel'] = $record->Header->DbLabel ? (string) $record->Header->DbLabel : '';
@@ -225,9 +247,11 @@ class EBSCOResponse
                 }
             }
 
+
             $results[] = $result;
         }
 
+		
         return $results;
     }
 
@@ -246,30 +270,32 @@ class EBSCOResponse
         $results = array();
 
         $facets = $this->response->SearchResult->AvailableFacets->AvailableFacet;
-        foreach ($facets as $facet) {
-            $values = array();
-            foreach ($facet->AvailableFacetValues->AvailableFacetValue as $value) {
-               $this_value = (string) $value->Value;
-               $this_value = str_replace(array('\(','\)'), array('(', ')'), $this_value);
-               $this_action = (string) $value->AddAction;
-               $this_action = str_replace(array('\(','\)'), array('(', ')'), $this_action);
-               $values[] = array(
-                   'Value'  => $this_value,
-                   'Action' => $this_action,
-                   'Count'  => (string) $value->Count
-               );
-            }
-            $id = (string) $facet->Id;
-            $label = (string) $facet->Label;
-            if (!empty($label)) {
-                $results[] = array(
-                    'Id'        => $id,
-                    'Label'     => $label,
-                    'Values'    => $values,
-                    'isApplied' => false
-                );
-            }
-        }
+		if ($facets) {
+			foreach ($facets as $facet) {
+				$values = array();
+				foreach ($facet->AvailableFacetValues->AvailableFacetValue as $value) {
+				   $this_value = (string) $value->Value;
+				   $this_value = str_replace(array('\(','\)'), array('(', ')'), $this_value);
+				   $this_action = (string) $value->AddAction;
+				   $this_action = str_replace(array('\(','\)'), array('(', ')'), $this_action);
+				   $values[] = array(
+					   'Value'  => $this_value,
+					   'Action' => $this_action,
+					   'Count'  => (string) $value->Count
+				   );
+				}
+				$id = (string) $facet->Id;
+				$label = (string) $facet->Label;
+				if (!empty($label)) {
+					$results[] = array(
+						'Id'        => $id,
+						'Label'     => $label,
+						'Values'    => $values,
+						'isApplied' => false
+					);
+				}
+			}
+		}
 
         return $results;
     }
@@ -319,6 +345,29 @@ class EBSCOResponse
             );
         }
 
+        // RelatedContent
+        $elements = $this->response->AvailableSearchCriteria->AvailableRelatedContent->AvailableRelatedContent;
+        $relatedContent = array();
+        foreach ($elements as $element) {
+            $relatedContent[] = array(
+                'Type'       => (string) $element->Type,
+                'Label'    => (string) $element->Label,
+                'Action'   => (string) $element->AddAction,
+                'DefaultOn' => (string) $element->DefaultOn 
+            );
+        }
+
+        // Did you mean
+        $elements = $this->response->AvailableSearchCriteria->AvailableDidYouMeanOptions->AvailableDidYouMeanOption;
+        $didYouMean = array();
+        foreach ($elements as $element) {
+            $didYouMean[] = array(
+                'Id'       => (string) $element->Id,
+                'Label'    => (string) $element->Label,
+                'DefaultOn' => (string) $element->DefaultOn 
+            );
+        }
+
         // Limiters
         $elements = $this->response->AvailableSearchCriteria->AvailableLimiters->AvailableLimiter;
         $limiters = array();
@@ -348,7 +397,9 @@ class EBSCOResponse
             'sort'      => $sort,
             'tags'      => $tags,
             'expanders' => $expanders,
-            'limiters'  => $limiters
+            'limiters'  => $limiters,
+            'relatedContent'  => $relatedContent,
+            'didYouMean'  => $didYouMean
         );
 
         return $result;
@@ -385,9 +436,12 @@ class EBSCOResponse
                 $target = (string) $image->Target;
                 $result['ImageInfo'][$size] = $target;
             }
-        } else {
+        } 
+		else 
+		{
             $result['ImageInfo'] = '';
         }
+		
         if ($record->FullText) {
             $availability = (integer) ($record->FullText->Text->Availability) == 1;
             $links = array();

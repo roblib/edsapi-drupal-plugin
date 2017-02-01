@@ -1,8 +1,8 @@
 <?php
-/*
- * EBSCO Drupal module
+ /*
  *
- * Copyright [2014] [EBSCO Information Services]
+ *
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+  */
 require_once 'lib/EBSCODocument.php';
 
 # global variable
@@ -108,6 +108,9 @@ function ebsco_permission() {
         'administer ebsco' => array(
             'title' => t('Administer EBSCO')
         ),
+        'use ebsco' => array(
+            'title' => t('Use EBSCO')
+        )
     );
 }
 
@@ -121,15 +124,15 @@ function ebsco_admin() {
 
     $form['ebsco_credentials'] = array(
       '#type' => 'fieldset',
-      '#title' => t('API credentials')
+      '#title' => t('EDS API credentials')
     );
 
-    $form['ebsco_credentials']['ebsco_password'] = array(
+    $form['ebsco_credentials']['ebsco_profile'] = array(
         '#type' => 'textfield',
-        '#title' => t('Password'),
-        '#default_value' => variable_get('ebsco_password'),
+        '#title' => t('Profile Id'),
+        '#default_value' => variable_get('ebsco_profile'),
         '#size' => 50,
-        '#description' => t("The API password."),
+        '#description' => t("The API Profile Id."),
         '#required' => TRUE
     );
 
@@ -142,18 +145,19 @@ function ebsco_admin() {
         '#required' => TRUE
     );
 
-    $form['ebsco_credentials']['ebsco_profile'] = array(
+    $form['ebsco_credentials']['ebsco_password'] = array(
         '#type' => 'textfield',
-        '#title' => t('Profile Id'),
-        '#default_value' => variable_get('ebsco_profile'),
+        '#title' => t('Password'),
+        '#default_value' => variable_get('ebsco_password'),
         '#size' => 50,
-        '#description' => t("The API Profile Id."),
+        '#description' => t("The API password."),
         '#required' => TRUE
     );
 
     $form['ebsco_credentials']['ebsco_interface'] = array(
         '#type' => 'textfield',
         '#title' => t('Interface Id'),
+		'#default_value' => variable_get('ebsco_interface'),
         '#size' => 50,
         '#description' => t("The API Interface Id."),
         '#required' => FALSE
@@ -162,8 +166,18 @@ function ebsco_admin() {
     $form['ebsco_credentials']['ebsco_organization'] = array(
         '#type' => 'textfield',
         '#title' => t('Organization Id'),
+		'#default_value' => variable_get('ebsco_organization'),
         '#size' => 50,
         '#description' => t("The API Organization Id."),
+        '#required' => FALSE
+    );
+
+    $form['ebsco_credentials']['ebsco_local_ips'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Local IP addresses'),
+		'#default_value' => variable_get('ebsco_local_ips'),
+        '#size' => 100,
+        '#description' => t("Local IP address list for guest detection (ex: 127.0.0.1, 192.168.10.1, 172.18.12)"),
         '#required' => FALSE
     );
 
@@ -202,7 +216,7 @@ function ebsco_admin() {
     $form['ebsco_general']['ebsco_default_amount'] = array(
         '#type' => 'select',
         '#title' => t('Default detail level'),
-        '#default_value' => variable_get('ebsco_default_amount', 'detailed'),
+        '#default_value' => variable_get('ebsco_default_amount', 'brief'),
         '#description' => t("Default level of data detail."),
         '#options' => EBSCODocument::amount_options(),
         '#required' => TRUE
@@ -415,7 +429,7 @@ function ebsco_sort_form() {
 
     $options = EBSCODocument::amount_options();
     $values = array_values($options);
-    $default_value = isset($params['amount']) ? $params['amount'] : $values[0];
+    $default_value = isset($params['amount']) ? $params['amount'] : variable_get('ebsco_default_amount', 'brief');
     $form['mode'] = array(
         '#id'            => 'ebsco-amount',
         '#type'          => 'select',
@@ -886,6 +900,8 @@ function template_preprocess_ebsco_results(&$variables) {
     $variables['record_count'] = $Document->record_count();
     $variables['search_view'] = $Document->search_view();
     $variables['search_time'] = $Document->search_time();
+    $variables['relatedContent'] = $Document->relatedContent();
+    $variables['autoSuggestTerms'] = $Document->autoSuggestTerms();
     $variables['lookfor'] = '';
     if (isset($params['lookfor'])) {
         $variables['lookfor'] = $params['lookfor'];
@@ -904,7 +920,7 @@ function template_preprocess_ebsco_results(&$variables) {
     $variables['sort_form'] = drupal_render($v1);
 
     // Save data needed by scroller in Detailed view page
-    $Document->search_write();
+    //$Document->search_write();
 }
 
 

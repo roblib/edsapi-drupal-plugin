@@ -4,7 +4,9 @@
  *
  * PHP version 5
  *
- * Copyright [2014] [EBSCO Information Services]
+  *
+ *
+ * Copyright [2017] [EBSCO Information Services]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
