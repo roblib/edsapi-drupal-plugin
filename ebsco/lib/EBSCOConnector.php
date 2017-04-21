@@ -1,9 +1,9 @@
 <?php
 
 /**
+ * @file
  * EBSCOException class
- * Used when EBSCO API calls return error messages
-  *
+ * Used when EBSCO API calls return error messages.
  *
  * Copyright [2017] [EBSCO Information Services]
  *
@@ -12,246 +12,257 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class EBSCOException extends Exception
-{
-    const CRITICAL_ERROR = 1;
 
-    // Make message argument mandatory
-    public function __construct($message, $code = self::CRITICAL_ERROR, Exception $previous = null) {
-        parent::__construct($message, $code, $previous);
-    }
-}
-
-
-
-
-class EBSCOConnector
-{
 /**
-     * Error codes defined by EDS API
+ *
+ */
+class EBSCOException extends Exception {
+  const CRITICAL_ERROR = 1;
+
+  /**
+   * Make message argument mandatory.
+   */
+  public function __construct($message, $code = self::CRITICAL_ERROR, Exception $previous = NULL) {
+    parent::__construct($message, $code, $previous);
+  }
+
+}
+/**
+ *
+ */
+class EBSCOConnector {
+  /**
+     * Error codes defined by EDS API.
      */
-    const EDS_UNKNOWN_PARAMETER              = 100;
-    const EDS_INCORRECT_PARAMETER_FORMAT     = 101;
-    const EDS_INVALID_PARAMETER_INDEX        = 102;
-    const EDS_MISSING_PARAMETER              = 103;
-    const EDS_AUTH_TOKEN_INVALID             = 104;
-    const EDS_INCORRECT_ARGUMENTS_NUMBER     = 105;
-    const EDS_UNKNOWN_ERROR                  = 106;
-    const EDS_AUTH_TOKEN_MISSING             = 107;
-    const EDS_SESSION_TOKEN_MISSING          = 108;
-    const EDS_SESSION_TOKEN_INVALID          = 109;
-    const EDS_INVALID_RECORD_FORMAT          = 110;
-    const EDS_UNKNOWN_ACTION                 = 111;
-    const EDS_INVALID_ARGUMENT_VALUE         = 112;
-    const EDS_CREATE_SESSION_ERROR           = 113;
-    const EDS_REQUIRED_DATA_MISSING          = 114;
-    const EDS_TRANSACTION_LOGGING_ERROR      = 115;
-    const EDS_DUPLICATE_PARAMETER            = 116;
-    const EDS_UNABLE_TO_AUTHENTICATE         = 117;
-    const EDS_SEARCH_ERROR                   = 118;
-    const EDS_INVALID_PAGE_SIZE              = 119;
-    const EDS_SESSION_SAVE_ERROR             = 120;
-    const EDS_SESSION_ENDING_ERROR           = 121;
-    const EDS_CACHING_RESULTSET_ERROR        = 122;
-    const EDS_INVALID_EXPANDER_ERROR         = 123;
-    const EDS_INVALID_SEARCH_MODE_ERROR      = 124;
-    const EDS_INVALID_LIMITER_ERROR          = 125;
-    const EDS_INVALID_LIMITER_VALUE_ERROR    = 126;
-    const EDS_UNSUPPORTED_PROFILE_ERROR      = 127;
-    const EDS_PROFILE_NOT_SUPPORTED_ERROR    = 128;
-    const EDS_INVALID_CONTENT_PROVIDER_ERROR = 129;
-    const EDS_INVALID_SOURCE_TYPE_ERROR      = 130;
-    const EDS_XSLT_ERROR                     = 131;
-    const EDS_RECORD_NOT_FOUND_ERROR         = 132;
-    const EDS_SIMULTANEOUS_USER_LIMIT_ERROR  = 133;
-    const EDS_NO_GUEST_ACCESS_ERROR          = 134;
-    const EDS_DBID_NOT_IN_PROFILE_ERROR      = 135;
-    const EDS_INVALID_SEARCH_VIEW_ERROR      = 136;
-    const EDS_RETRIEVING_FULL_TEXT_ERROR     = 137;
+  const EDS_UNKNOWN_PARAMETER              = 100;
+  const EDS_INCORRECT_PARAMETER_FORMAT     = 101;
+  const EDS_INVALID_PARAMETER_INDEX        = 102;
+  const EDS_MISSING_PARAMETER              = 103;
+  const EDS_AUTH_TOKEN_INVALID             = 104;
+  const EDS_INCORRECT_ARGUMENTS_NUMBER     = 105;
+  const EDS_UNKNOWN_ERROR                  = 106;
+  const EDS_AUTH_TOKEN_MISSING             = 107;
+  const EDS_SESSION_TOKEN_MISSING          = 108;
+  const EDS_SESSION_TOKEN_INVALID          = 109;
+  const EDS_INVALID_RECORD_FORMAT          = 110;
+  const EDS_UNKNOWN_ACTION                 = 111;
+  const EDS_INVALID_ARGUMENT_VALUE         = 112;
+  const EDS_CREATE_SESSION_ERROR           = 113;
+  const EDS_REQUIRED_DATA_MISSING          = 114;
+  const EDS_TRANSACTION_LOGGING_ERROR      = 115;
+  const EDS_DUPLICATE_PARAMETER            = 116;
+  const EDS_UNABLE_TO_AUTHENTICATE         = 117;
+  const EDS_SEARCH_ERROR                   = 118;
+  const EDS_INVALID_PAGE_SIZE              = 119;
+  const EDS_SESSION_SAVE_ERROR             = 120;
+  const EDS_SESSION_ENDING_ERROR           = 121;
+  const EDS_CACHING_RESULTSET_ERROR        = 122;
+  const EDS_INVALID_EXPANDER_ERROR         = 123;
+  const EDS_INVALID_SEARCH_MODE_ERROR      = 124;
+  const EDS_INVALID_LIMITER_ERROR          = 125;
+  const EDS_INVALID_LIMITER_VALUE_ERROR    = 126;
+  const EDS_UNSUPPORTED_PROFILE_ERROR      = 127;
+  const EDS_PROFILE_NOT_SUPPORTED_ERROR    = 128;
+  const EDS_INVALID_CONTENT_PROVIDER_ERROR = 129;
+  const EDS_INVALID_SOURCE_TYPE_ERROR      = 130;
+  const EDS_XSLT_ERROR                     = 131;
+  const EDS_RECORD_NOT_FOUND_ERROR         = 132;
+  const EDS_SIMULTANEOUS_USER_LIMIT_ERROR  = 133;
+  const EDS_NO_GUEST_ACCESS_ERROR          = 134;
+  const EDS_DBID_NOT_IN_PROFILE_ERROR      = 135;
+  const EDS_INVALID_SEARCH_VIEW_ERROR      = 136;
+  const EDS_RETRIEVING_FULL_TEXT_ERROR     = 137;
 
 
-    /**
+  /**
      * HTTP status codes constants
-     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html.
      *
      * @global integer HTTP_OK        The request has succeeded
      * @global integer HTTP_NOT_FOUND The server has not found anything matching the Request-URI
      */
-    const HTTP_OK                    = 200;
-    const HTTP_BAD_REQUEST           = 400;
-    const HTTP_NOT_FOUND             = 404;
-    const HTTP_INTERNAL_SERVER_ERROR = 500;
+  const HTTP_OK                    = 200;
+  const HTTP_BAD_REQUEST           = 400;
+  const HTTP_NOT_FOUND             = 404;
+  const HTTP_INTERNAL_SERVER_ERROR = 500;
 
 
-    /**
-     * The HTTP_Request object used for API transactions
-     * @global object HTTP_Request
-     */
-    private $client;
+  /**
+   * The HTTP_Request object used for API transactions.
+   *
+   * @global object HTTP_Request
+   */
+  private $client;
 
 
-    /**
-     * The URL of the EBSCO API server
-     * @global string
-     */
-    private static $end_point = 'http://eds-api.ebscohost.com/EDSAPI/rest';
+  /**
+   * The URL of the EBSCO API server.
+   *
+   * @global string
+   */
+  private static $end_point = 'http://eds-api.ebscohost.com/EDSAPI/rest';
 
 
-    /**
-     * The URL of the EBSCO API server
-     * @global string
-     */
-    private static $authentication_end_point = 'https://eds-api.ebscohost.com/AuthService/rest';
+  /**
+   * The URL of the EBSCO API server.
+   *
+   * @global string
+   */
+  private static $authentication_end_point = 'https://eds-api.ebscohost.com/AuthService/rest';
 
 
-    /**
-     * The password used for API transactions
-     * @global string
-     */
-    private $password;
+  /**
+   * The password used for API transactions.
+   *
+   * @global string
+   */
+  private $password;
 
 
-    /**
-     * The user id used for API transactions
-     * @global string
-     */
-    private $userId;
+  /**
+   * The user id used for API transactions.
+   *
+   * @global string
+   */
+  private $userId;
 
 
-    /**
-     * The profile ID used for API transactions
-     * @global string
-     */
-    private $profileId;
+  /**
+   * The profile ID used for API transactions.
+   *
+   * @global string
+   */
+  private $profileId;
 
 
-    /**
-     * The interface ID used for API transactions
-     * @global string
-     */
-    private $interfaceId;
+  /**
+   * The interface ID used for API transactions.
+   *
+   * @global string
+   */
+  private $interfaceId;
 
 
-    /**
-     * The customer ID used for API transactions
-     * @global string
-     */
-    private $orgId;
+  /**
+   * The customer ID used for API transactions.
+   *
+   * @global string
+   */
+  private $orgId;
 
 
-    /**
-     * The isGuest used for API transactions
-     * @global string 'y' or 'n'
-     */
-    private $isGuest;
+  /**
+   * The isGuest used for API transactions.
+   *
+   * @global string 'y' or 'n'
+   */
+  private $isGuest;
 
-    /**
-     * Contains the list of ip addresses
-     * @global string 
-     */
-    private $local_ip_address;
-
-
-    /*
-     * You can log HTTP_Request requests using this option
-     * @global bool logAPIRequests
-     */
-    private $logAPIRequests;
+  /**
+   * Contains the list of ip addresses.
+   *
+   * @global string
+   */
+  private $local_ip_address;
 
 
-    /**
-     * The logger object
-     * @global object Logger
-     */
-    private $logger;
+  /**
+   * You can log HTTP_Request requests using this option.
+   *
+   * @global bool logAPIRequests
+   */
+
+  private $logAPIRequests;
 
 
-    /**
-     * Constructor
-     *
-     * Sets up the EBSCO API settings
-     *
-     * @param none
-     *
-     * @access public
-     */
-	 
-    public function __construct($config)
-    {
-        $this->password = $config['password'];
-        $this->userId = $config['user'];
-        $this->interfaceId = $config['interface'];
-        $this->profileId = $config['profile'];
-        $this->orgId = $config['organization'];
-        $this->local_ip_address = $config['local_ip_address'];
-        $this->isGuest = (user_is_logged_in() || $this->isGuestIPAddress($_SERVER["REMOTE_ADDR"]))? 'n' : 'y';
-        $this->logAPIRequests = ($config['log'] == 1);
-        if ($this->logAPIRequests) {
-            $writer = new Zend_Log_Writer_Stream('php://output');
-            $this->logger = new Zend_Log($writer);
-        }
+  /**
+   * The logger object.
+   *
+   * @global object Logger
+   */
+  private $logger;
+
+  /**
+   * Constructor.
+   *
+   * Sets up the EBSCO API settings.
+   *
+   * @param none
+   *
+   * @access public
+   */
+  public function __construct($config) {
+    $this->password = $config['password'];
+    $this->userId = $config['user'];
+    $this->interfaceId = $config['interface'];
+    $this->profileId = $config['profile'];
+    $this->orgId = $config['organization'];
+    $this->local_ip_address = $config['local_ip_address'];
+    $this->isGuest = (user_is_logged_in() || $this->isGuestIPAddress($_SERVER["REMOTE_ADDR"])) ? 'n' : 'y';
+    $this->logAPIRequests = ($config['log'] == 1);
+    if ($this->logAPIRequests) {
+      $writer = new Zend_Log_Writer_Stream('php://output');
+      $this->logger = new Zend_Log($writer);
     }
+  }
 
+  /**
+   * Detects if the user is authorized based on the IP address.
+   *
+   * @return string
+   */
+  public function isGuestIPAddress($ipUser) {
+    $s = $this->local_ip_address;
 
-    /**
-     * Detects if the user is authorized based on the IP address
-     *
-     * @return string
-     */
-    public function isGuestIPAddress($ipUser)
-    {
-		$s= $this->local_ip_address;
-		
-		if (trim($s)=="") {
-			return false;
-		}
-		//break records 
-		$m=explode(",",$s);
-		
-		foreach($m as $ip) {
-		  if ( strcmp(substr($ipUser,0,strlen(trim($ip))),trim($ip))==0)   {
-			// inside of ip address range of customer
-			return true;
-		  }
-		}		
-        return false;
+    if (trim($s) == "") {
+      return FALSE;
     }
-	
-    /**
-     * Public getter for private isGuest 
-     *
-     * @param none
-     *
-     * @return string isGuest
-     * @access public
-     */
-    public function isGuest()
-    {
-        return $this->isGuest;
+    // Break records.
+    $m = explode(",", $s);
+
+    foreach ($m as $ip) {
+      if (strcmp(substr($ipUser, 0, strlen(trim($ip))), trim($ip)) == 0) {
+        // Inside of ip address range of customer.
+        return TRUE;
+      }
     }
+    return FALSE;
+  }
 
+  /**
+   * Public getter for private isGuest .
+   *
+   * @param none
+   *
+   * @return string isGuest
+   *
+   * @access public
+   */
+  public function isGuest() {
+    return $this->isGuest;
+  }
 
-    /**
-     * Request the authentication token
-     *
-     * @param none
-     *
-     * @return object SimpleXml or PEAR_Error
-     * @access public
-     */
-    public function requestAuthenticationToken()
-    {
-        $url = self::$authentication_end_point . '/UIDAuth';
+  /**
+   * Request the authentication token.
+   *
+   * @param none
+   *
+   * @return object SimpleXml or PEAR_Error
+   *
+   * @access public
+   */
+  public function requestAuthenticationToken() {
+    $url = self::$authentication_end_point . '/UIDAuth';
 
-        // Add the body of the request
-        $params =<<<BODY
+    // Add the body of the request.
+    $params = <<<BODY
 <UIDAuthRequestMessage xmlns="http://www.ebscohost.com/services/public/AuthService/Response/2012/06/01">
     <UserId>{$this->userId}</UserId>
     <Password>{$this->password}</Password>
@@ -259,246 +270,254 @@ class EBSCOConnector
 </UIDAuthRequestMessage>
 BODY;
 
-        $response = $this->request($url, $params, array(), 'POST');
-        return $response;
+    $response = $this->request($url, $params, array(), 'POST');
+    return $response;
+  }
+
+  /**
+   * Request the session token.
+   *
+   * @param array $headers
+   *   Authentication token.
+   *
+   * @return object SimpleXml or PEAR_Error
+   *
+   * @access public
+   */
+  public function requestSessionToken($headers) {
+    $url = self::$end_point . '/CreateSession';
+
+    // Add the HTTP query params.
+    $params = array(
+      'profile' => $this->profileId,
+      'org'     => $this->orgId,
+      'guest'   => $this->isGuest,
+    );
+
+    $response = $this->request($url, $params, $headers);
+    return $response;
+  }
+
+  /**
+   * Request the search records.
+   *
+   * @param array $params
+   *   Search specific parameters.
+   * @param array $headers
+   *   Authentication and session tokens.
+   *
+   * @return object SimpleXml or PEAR_Error
+   *
+   * @access public
+   */
+  public function requestSearch($params, $headers) {
+    $url = self::$end_point . '/Search';
+
+    $response = $this->request($url, $params, $headers);
+    return $response;
+  }
+
+  /**
+   * Request a specific record.
+   *
+   * @param array $params
+   *   Retrieve specific parameters.
+   * @param array $headers
+   *   Authentication and session tokens.
+   *
+   * @return object SimpleXml or PEAR_Error
+   *
+   * @access public
+   */
+  public function requestRetrieve($params, $headers) {
+    $url = self::$end_point . '/Retrieve';
+
+    $response = $this->request($url, $params, $headers);
+    return $response;
+  }
+
+  /**
+   * Request the info data.
+   *
+   * @param null $params
+   *   Not used.
+   * @param array $headers
+   *   Authentication and session tokens.
+   *
+   * @return object SimpleXml or PEAR_Error
+   *
+   * @access public
+   */
+  public function requestInfo($params, $headers) {
+    $url = self::$end_point . '/Info';
+
+    $response = $this->request($url, $params, $headers);
+
+    return $response;
+  }
+
+  /**
+   * Send an HTTP request and inspect the response.
+   *
+   * @param string $url
+   *   The url of the HTTP request.
+   * @param array $params
+   *   The parameters of the HTTP request.
+   * @param array $headers
+   *   The headers of the HTTP request.
+   * @param array $body
+   *   The body of the HTTP request.
+   * @param string $method
+   *   The HTTP method, default is 'GET'.
+   *
+   * @return object             SimpleXml or PEAR_Error
+   *
+   * @access protected
+   */
+  protected function request($url, $params, $headers = array(), $method = 'GET') {
+    $xml = FALSE;
+    $return = FALSE;
+    $data = NULL;
+
+    if (!empty($params)) {
+      // Arrays of parameters are used only for GET requests.
+      if (is_array($params)) {
+        $query = http_build_query($params, '', '&');
+        $query = preg_replace('/\%5B\d+\%5D/', '', $query);
+        $url = $url . '?' . $query;
+        // String parameters are used only for POST requests.
+      }
+      else {
+        $data = $params;
+        $headers = array_merge(
+        array('content-type' => 'text/xml'),
+        $headers
+          );
+      }
     }
 
+    // Add compression in case its not there.
+    $headers = array_merge(
+    array('Accept-Encoding' => 'gzip,deflate'),
+    $headers
+    );
 
-    /**
-     * Request the session token
-     *
-     * @param array $headers  Authentication token
-     *
-     * @return object SimpleXml or PEAR_Error
-     * @access public
-     */
-    public function requestSessionToken($headers)
-    {
-        $url = self::$end_point . '/CreateSession';
+    $options = array(
+      'headers' => $headers,
+      'method'  => $method,
+      'data'    => $data,
+    );
 
-        // Add the HTTP query params
-        $params = array(
-            'profile' => $this->profileId,
-            'org'     => $this->orgId,
-            'guest'   => $this->isGuest
-        );
-
-        $response = $this->request($url, $params, $headers);
-        return $response;
-    }
-
-
-    /**
-     * Request the search records
-     *
-     * @param array $params Search specific parameters
-     * @param array $headers Authentication and session tokens
-     *
-     * @return object SimpleXml or PEAR_Error
-     * @access public
-     */
-    public function requestSearch($params, $headers)
-    {
-        $url = self::$end_point . '/Search';
-
-        $response = $this->request($url, $params, $headers);
-        return $response;
-    }
-
-
-    /**
-     * Request a specific record
-     *
-     * @param array $params Retrieve specific parameters
-     * @param array $headers Authentication and session tokens
-     *
-     * @return object SimpleXml or PEAR_Error
-     * @access public
-     */
-    public function requestRetrieve($params, $headers)
-    {
-        $url = self::$end_point . '/Retrieve';
-
-        $response = $this->request($url, $params, $headers);
-        return $response;
-    }
-
-
-    /**
-     * Request the info data
-     *
-     * @param null $params Not used
-     * @param array $headers Authentication and session tokens
-     *
-     * @return object SimpleXml or PEAR_Error
-     * @access public
-     */
-    public function requestInfo($params, $headers)
-    {
-        $url = self::$end_point . '/Info';
-
-        $response = $this->request($url, $params, $headers);
-
-        return $response;
-    }
-
-
-
-    /**
-     * Send an HTTP request and inspect the response
-     *
-     * @param string $url         The url of the HTTP request
-     * @param array  $params      The parameters of the HTTP request
-     * @param array  $headers     The headers of the HTTP request
-     * @param array  $body        The body of the HTTP request
-     * @param string $method      The HTTP method, default is 'GET'
-     *
-     * @return object             SimpleXml or PEAR_Error
-     * @access protected
-     */
-    protected function request($url, $params, $headers = array(), $method = 'GET') 
-    {
-        $xml = false;
-        $return = false;
-        $data = null;
-
-        if (!empty($params)) {
-            // Arrays of parameters are used only for GET requests
-            if (is_array($params)) {
-                $query = http_build_query($params, '', '&');
-                $query = preg_replace('/\%5B\d+\%5D/', '', $query);
-                $url = $url . '?' . $query;
-            // String parameters are used only for POST requests
-            } else {
-                $data = $params;
-                $headers = array_merge(
-                    array('content-type' => 'text/xml'),
-                    $headers
-                );
-            }
+    // Send the request.
+    try {
+      $response = drupal_http_request($url, $options);
+      // print_r($url);
+      // print_r($response);
+      $code = $response->code;
+      if (isset($response->headers['content-encoding'])) {
+        if ($response->headers['content-encoding'] == 'gzip') {
+          $response->data = gzinflate(substr($response->data, 10));
         }
+        elseif ($response->headers['content-encoding'] == 'deflate') {
+          $response->data = gzinflate($response->data);
+        }
+      }
+      switch ($code) {
+        case self::HTTP_OK:
 
-		//add compression in case its not there
+          $xml_str = $response->data;
 
-		$headers = array_merge(
-			array('Accept-Encoding' => 'gzip,deflate'),
-			$headers
-		);
-		
-        $options = array(
-            'headers' => $headers,
-            'method'  => $method,
-            'data'    => $data
-        );
+          try {
+            // Clean EMP namespace.
+            $xml_str = str_replace(array("<a:", "</a:"), array("<", "</"), $xml_str);
+            $xml = simplexml_load_string($xml_str);
+            $return = $xml;
+          }
+          catch (Exception $e) {
+            $return = new EBSCOException($xml);
+          }
+          break;
 
-        // Send the request
-        try {
-            $response = drupal_http_request($url, $options);
-//print_r($url);
-//print_r($response);
+        case self::HTTP_BAD_REQUEST:
+          $xml_str = $response->data;
+          try {
+            $xml = simplexml_load_string($xml_str);
 
-            $code = $response->code;
-			if (isset($response->headers['content-encoding'])) {
-				if ($response->headers['content-encoding'] == 'gzip') {
-				  $response->data = gzinflate(substr($response->data, 10));
-				}
-				elseif ($response->headers['content-encoding'] == 'deflate') {
-				  $response->data = gzinflate($response->data);
-				}
-			}
-			switch ($code) {
-                case self::HTTP_OK:
-					
-					$xml_str = $response->data;
-					
-					  try {
-						  // clean EMP namespace
-						$xml_str=str_replace(array("<a:","</a:"),array("<","</"),$xml_str);
-                        $xml = simplexml_load_string($xml_str);
-                        $return = $xml;
-                    } catch(Exception $e) {
-                        $return = new EBSCOException($xml);
-                    }
-                    break;
-
-                case self::HTTP_BAD_REQUEST:
-                    $xml_str = $response->data;
-                    try {
-                        $xml = simplexml_load_string($xml_str);
-
-                        // If the response is an API error
-                        $isError = isset($xml->ErrorNumber) || isset($xml->ErrorCode);
-                        if ($isError) {
-                            $error = ''; $code = 0;
-                            if (isset($xml->DetailedErrorDescription) && !empty($xml->DetailedErrorDescription)) {
-                                $error = (string) $xml->DetailedErrorDescription;
-                            } else if (isset($xml->ErrorDescription)) {
-                                $error = (string) $xml->ErrorDescription;
-                            } else if (isset($xml->Reason)) {
-                                $error = (string) $xml->Reason;
-                            }
-                            if (isset($xml->ErrorNumber)) {
-                                $code = (integer) $xml->ErrorNumber;
-                            } else if (isset($xml->ErrorCode)) {
-                                $code = (integer) $xml->ErrorCode;
-                            }
-                            $return = new EBSCOException($error, $code);
-                        } else {
-                            $return = new EBSCOException("HTTP {$code} : The request could not be understood
+            // If the response is an API error.
+            $isError = isset($xml->ErrorNumber) || isset($xml->ErrorCode);
+            if ($isError) {
+              $error = ''; $code = 0;
+              if (isset($xml->DetailedErrorDescription) && !empty($xml->DetailedErrorDescription)) {
+                $error = (string) $xml->DetailedErrorDescription;
+              }
+              elseif (isset($xml->ErrorDescription)) {
+                $error = (string) $xml->ErrorDescription;
+              }
+              elseif (isset($xml->Reason)) {
+                $error = (string) $xml->Reason;
+              }
+              if (isset($xml->ErrorNumber)) {
+                $code = (integer) $xml->ErrorNumber;
+              }
+              elseif (isset($xml->ErrorCode)) {
+                $code = (integer) $xml->ErrorCode;
+              }
+              $return = new EBSCOException($error, $code);
+            }
+            else {
+              $return = new EBSCOException("HTTP {$code} : The request could not be understood
                                 by the server due to malformed syntax. Modify your search before retrying.");
-                        }
-                    } catch (Exception $e) {
-                        $return = new EBSCOException($xml);
-                    }
-                    break;
-
-                case self::HTTP_NOT_FOUND:
-                    $return = new EBSCOException("HTTP {$code} : The resource you are looking for might 
-                        have been removed, had its name changed, or is temporarily unavailable.");
-                    break;
-
-                case self::HTTP_INTERNAL_SERVER_ERROR:
-                    $return = new EBSCOException("HTTP {$code} : The server encountered an unexpected condition 
-                        which prevented it from fulfilling the request.");
-                    break;
-
-                default:
-                    $return = new EBSCOException("HTTP {$code} : Unexpected HTTP error.");
-                    break;
             }
-        } catch (Exception $e) {
-             $message = $this->toString($client); // or $this->toString($response)
-             $this->logger->log($message, Zend_Log::ERR);
-             $return = new EBSCOException($response);
-        }
+          }
+          catch (Exception $e) {
+            $return = new EBSCOException($xml);
+          }
+          break;
 
-        // Log any error
-        /*if ($this->logAPIRequests) {
-            // $client = both the HTTP request and response
-            // $response = only the HTTP response
-            $message = $this->toString($client); // or $this->toString($response)
-            $this->logger->log($message, Zend_Log::ERR);
-        }*/
+        case self::HTTP_NOT_FOUND:
+          $return = new EBSCOException("HTTP {$code} : The resource you are looking for might 
+                        have been removed, had its name changed, or is temporarily unavailable.");
+          break;
 
-        return $return;
+        case self::HTTP_INTERNAL_SERVER_ERROR:
+          $return = new EBSCOException("HTTP {$code} : The server encountered an unexpected condition 
+                        which prevented it from fulfilling the request.");
+          break;
+
+        default:
+          $return = new EBSCOException("HTTP {$code} : Unexpected HTTP error.");
+          break;
+      }
+    }
+    catch (Exception $e) {
+      // Or $this->toString($response)
+      $message = $this->toString($client);
+      $this->logger->log($message, Zend_Log::ERR);
+      $return = new EBSCOException($response);
     }
 
+    // Log any error
+    /*if ($this->logAPIRequests) {
+    // $client = both the HTTP request and response
+    // $response = only the HTTP response
+    $message = $this->toString($client); // or $this->toString($response)
+    $this->logger->log($message, Zend_Log::ERR);
+    }*/
 
-    /*
-     * Capture the output of print_r into a string
-     *
-     * @param object Any object
-     * @access private
-     */
-    private function toString($object)
-    {
-        ob_start();
-        print_r($object);
-        return ob_get_clean();
-    }
+    return $return;
+  }
 
+  /**
+   * Capture the output of print_r into a string.
+   *
+   * @param object Any object
+   *
+   * @access private
+   */
+  private function toString($object) {
+    ob_start();
+    print_r($object);
+    return ob_get_clean();
+  }
 
 }
-
-
-?>
