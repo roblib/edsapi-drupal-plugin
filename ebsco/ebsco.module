@@ -1,26 +1,28 @@
 <?php
 
- /**
-  * @file
-  * Copyright [2017] [EBSCO Information Services].
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at.
-  *
-  *     http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  */
+/**
+ * @file
+ * EBSCO Drupal integration module.
+ *
+ * Copyright [2017] [EBSCO Information Services]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 require_once 'lib/EBSCODocument.php';
 
 // Global variable.
-$Document = NULL;
+$_ebsco_document = NULL;
 
 
 /******************************************
@@ -28,11 +30,11 @@ $Document = NULL;
  ******************************************/
 
 /**
- * Implements hook_user_login.
- *
- * Redirects after login.
+ * Implements hook_user_login().
  */
 function ebsco_user_login(&$edit, $account) {
+
+  // Redirect after login.
   if (isset($_SESSION['EBSCO']['redirect'])) {
     $_GET['destination'] = urldecode($_SESSION['EBSCO']['redirect']['destination']);
     unset($_SESSION['EBSCO']['redirect']);
@@ -40,29 +42,17 @@ function ebsco_user_login(&$edit, $account) {
 }
 
 /**
- * Implements hook_help.
- *
- * Displays help and module information.
- *
- * @param path
- *   Which path of the site we're using to display help
- * @param arg
- *   Array that holds the current path as returned from arg() function
+ * Implements hook_help().
  */
 function ebsco_help($path, $arg) {
   $output = "";
   switch ($path) {
     case "admin/help#ebsco":
       $output .= '<h2>' . t("Full-text articles and eBooks from EBSCOhost Discovery Services") . '</h2>';
-      $output .= '<p>' . t("EBSCO Discovery Service provides users with an easy, yet powerful means of accessing all of 
-                an institution's information resources through a single search.") . '</p>';
-      $output .= '<p>' . t("This is achieved by harvesting metadata from both internal (library) and external (database vendors) sources, 
-                and creating a pre-indexed service of unprecedented size and speed.") . '</p>';
-      $output .= '<p>' . t("Although the resulting collection can be massive in size and scope, the fact that it is indexed locally 
-                (on the EBSCOhost&reg; servers) allows for exceptionally fast search response times.") . '</p>';
-      $output .= '<p>' . t("As no two institutions are the same, EBSCO Discovery Service offers a vast array of customization options with 
-                regard to both the underlying collection of metadata as well as the front-end delivery of search results. 
-                All of this functionality is based upon the powerful EBSCOhost search experience familiar to researchers worldwide.") . '</p>';
+      $output .= '<p>' . t("EBSCO Discovery Service provides users with an easy, yet powerful means of accessing all of an institution's information resources through a single search.") . '</p>';
+      $output .= '<p>' . t("This is achieved by harvesting metadata from both internal (library) and external (database vendors) sources, and creating a pre-indexed service of unprecedented size and speed.") . '</p>';
+      $output .= '<p>' . t("Although the resulting collection can be massive in size and scope, the fact that it is indexed locally (on the EBSCOhost&reg; servers) allows for exceptionally fast search response times.") . '</p>';
+      $output .= '<p>' . t("As no two institutions are the same, EBSCO Discovery Service offers a vast array of customization options with regard to both the underlying collection of metadata as well as the front-end delivery of search results. All of this functionality is based upon the powerful EBSCOhost search experience familiar to researchers worldwide.") . '</p>';
       break;
   }
   return $output;
@@ -305,36 +295,32 @@ function ebsco_block_info() {
  */
 function ebsco_block_view($delta = '') {
   $params = $_GET;
+  $block = array();
   switch ($delta) {
     case 'ebsco_main':
       $reject = isset($params['q']) && strpos('ebsco/advanced', $params['q']) !== FALSE;
-      return array(
-        'content' => $reject ? '' : ebsco_basic_search_block(),
-      );
-
-    break;
+      $block['content'] = $reject ? '' : ebsco_basic_search_block();
+      break;
 
     case 'ebsco_facets':
       $reject = isset($params['q']) && strpos('ebsco/advanced', $params['q']) !== FALSE;
       $reject = $reject || (isset($params['edit']) && strpos('ebsco/results', $params['q']) !== FALSE);
       $reject = $reject || (isset($params['q']) && strpos('ebsco/result', $params['q']) !== FALSE);
-      return array(
-        'content' => $reject ? '' : ebsco_side_facets_block(),
-      );
-
-    break;
+      $block['content'] = $reject ? '' : ebsco_side_facets_block();
+      break;
   }
+  return $block;
 }
 
 /**
- * Page callbacks.
+ * EBSCO search results page callback.
  */
 function ebsco_results_page() {
   return theme('ebsco_results');
 }
 
 /**
- *
+ * EBSCO search result page callback.
  */
 function ebsco_result_page() {
   $is_xhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
@@ -348,7 +334,7 @@ function ebsco_result_page() {
 }
 
 /**
- *
+ * EBSCO fulltext page callback.
  */
 function ebsco_fulltext_page() {
   $is_xhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
@@ -374,18 +360,18 @@ function ebsco_fulltext_page() {
 }
 
 /**
- *
+ * EBSCO pdf page callback.
  */
 function ebsco_pdf_page() {
-  global $Document;
+  global $_ebsco_document;
   $params = $_REQUEST;
 
   if (user_is_logged_in()) {
-    if (empty($Document)) {
-      $Document = new EBSCODocument();
+    if (empty($_ebsco_document)) {
+      $_ebsco_document = new EBSCODocument();
     }
-    $Document->retrieve();
-    $record = $Document->record();
+    $_ebsco_document->retrieve();
+    $record = $_ebsco_document->record();
     drupal_goto($record->pdf_link);
   }
   else {
@@ -395,21 +381,21 @@ function ebsco_pdf_page() {
 }
 
 /**
- *
+ * EBSCO advanced search page callback.
  */
 function ebsco_advanced_search_page() {
   return theme('ebsco_advanced_search');
 }
 
 /**
- *
+ * EBSCO basic search page callback.
  */
 function ebsco_basic_search_block() {
   return theme('ebsco_basic_search');
 }
 
 /**
- *
+ * EBSCO side facets block callback.
  */
 function ebsco_side_facets_block() {
   return theme('ebsco_side_facets');
@@ -540,7 +526,7 @@ function ebsco_basic_search_form() {
  * @ingroup forms
  */
 function ebsco_advanced_search_form() {
-  global $Document;
+  global $_ebsco_document;
   $params = $_REQUEST;
 
   if (isset($params['edit']) && !empty($params['edit'])) {
@@ -653,8 +639,8 @@ function ebsco_advanced_search_form() {
     '#options'       => EBSCODocument::mode_options(),
   );
 
-  $expanders = $Document->expanders();
-  $limiters = $Document->limiters();
+  $expanders = $_ebsco_document->expanders();
+  $limiters = $_ebsco_document->limiters();
   $options = array('' => TRUE);
   foreach ($expanders as $key => $expander) {
     $options[$expander['Action']] = TRUE;
@@ -715,7 +701,9 @@ function ebsco_advanced_search_form() {
         '#title'         => $limiter['Label'],
         '#title_display' => 'after',
         '#name'          => 'filter[]',
-        '#attributes'    => array('value' => str_replace('value', 'y', $limiter['Action'])),
+        '#attributes'    => array(
+          'value' => str_replace('value', 'y', $limiter['Action']),
+        ),
         '#checked'       => $limiter['selected'],
 
       );
@@ -757,7 +745,11 @@ function ebsco_advanced_search_form() {
         '#value'             => $displayValue,
         '#name'              => $limiter['Id'],
         '#autocomplete_path' => NULL,
-        '#attributes'        => array('size' => 4, 'maxlength' => 4, 'class' => array('yearbox')),
+        '#attributes'        => array(
+          'size'          => 4,
+          'maxlength'     => 4,
+          'class'         => array('yearbox'),
+        ),
       );
       $element['#children'] = theme('textfield', array('element' => $element));
       $element['#children'] .= '<input id="ebsco-advanced-search-limiter' . $limiter['Id'] . '" type="hidden" name="filter[]" value="' . $value . '"/>';
@@ -793,8 +785,9 @@ function ebsco_advanced_search_form() {
     '#value' => t('Search'),
   );
 
+  $reset_button_text = t('Clear');
   $form['advanced']['clear'] = array(
-    '#markup'  => '<input id="ebsco-advanced-search-clear" class="form-submit" type="reset" value="' . t('Clear') . '" name="reset">',
+    '#markup'  => '<input id="ebsco-advanced-search-clear" class="form-submit" type="reset" value="' . $reset_button_text . '" name="reset">',
   );
 
   return $form;
@@ -889,27 +882,27 @@ function ebsco_advanced_search_form_submit($form, &$form_state) {
  * @see ebsco-results.tpl.php
  */
 function template_preprocess_ebsco_results(&$variables) {
-  global $Document;
+  global $_ebsco_document;
   $params = $_REQUEST;
 
   $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
-  if (empty($Document)) {
-    $Document = new EBSCODocument();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
   }
 
   $title = !empty($params['lookfor']) ? ' - ' . $params['lookfor'] : '';
   drupal_set_title('Search results' . $title);
 
-  $Document->search();
+  $_ebsco_document->search();
 
-  $variables['records'] = $Document->records();
-  $variables['record_start'] = $Document->record_start();
-  $variables['record_end'] = $Document->record_end();
-  $variables['record_count'] = $Document->record_count();
-  $variables['search_view'] = $Document->search_view();
-  $variables['search_time'] = $Document->search_time();
-  $variables['relatedContent'] = $Document->relatedContent();
-  $variables['autoSuggestTerms'] = $Document->autoSuggestTerms();
+  $variables['records'] = $_ebsco_document->records();
+  $variables['record_start'] = $_ebsco_document->record_start();
+  $variables['record_end'] = $_ebsco_document->record_end();
+  $variables['record_count'] = $_ebsco_document->record_count();
+  $variables['search_view'] = $_ebsco_document->search_view();
+  $variables['search_time'] = $_ebsco_document->search_time();
+  $variables['relatedContent'] = $_ebsco_document->relatedContent();
+  $variables['autoSuggestTerms'] = $_ebsco_document->autoSuggestTerms();
   $variables['lookfor'] = '';
   if (isset($params['lookfor'])) {
     $variables['lookfor'] = $params['lookfor'];
@@ -923,13 +916,13 @@ function template_preprocess_ebsco_results(&$variables) {
       }
     }
   }
-  $variables['pager'] = $Document->pager();
+  $variables['pager'] = $_ebsco_document->pager();
 
   $v1 = drupal_get_form('ebsco_sort_form');
   $variables['sort_form'] = drupal_render($v1);
 
   // Save data needed by scroller in Detailed view page
-  // $Document->search_write();
+  // $_ebsco_document->search_write();
 }
 
 /**
@@ -938,14 +931,14 @@ function template_preprocess_ebsco_results(&$variables) {
  * @see ebsco-basic-search.tpl.php
  */
 function template_preprocess_ebsco_basic_search(&$variables) {
-  global $Document;
+  global $_ebsco_document;
   $params = $_REQUEST;
 
-  if (empty($Document)) {
-    $Document = new EBSCODocument();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
   }
 
-  $variables['search_view'] = $Document->search_view();
+  $variables['search_view'] = $_ebsco_document->search_view();
   $variables['lookfor'] = '';
   if (isset($params['lookfor'])) {
     $variables['lookfor'] = $params['lookfor'];
@@ -970,13 +963,13 @@ function template_preprocess_ebsco_basic_search(&$variables) {
  */
 function template_preprocess_ebsco_advanced_search(&$variables) {
   drupal_add_library('system', 'ui.slider');
-  global $Document;
+  global $_ebsco_document;
   $params = $_REQUEST;
 
-  if (empty($Document)) {
-    $Document = new EBSCODocument();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
   }
-  $Document->info();
+  $_ebsco_document->info();
 
   $v1 = drupal_get_form('ebsco_advanced_search_form');
   $variables['search_form'] = drupal_render($v1);
@@ -992,14 +985,14 @@ function template_preprocess_ebsco_result(&$variables) {
   $params['op'] = isset($params['op']) ? $params['op'] : 'Next';
 
   $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
-  if (empty($Document)) {
-    $Document = new EBSCODocument();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
   }
-  $Document->retrieve();
-  $record = $Document->record();
+  $_ebsco_document->retrieve();
+  $record = $_ebsco_document->record();
 
   $variables['record'] = $record;
-  $lastSearch = isset($params['id']) ? $Document->search_read($params['id'], $params['op']) : '';
+  $lastSearch = isset($params['id']) ? $_ebsco_document->search_read($params['id'], $params['op']) : '';
   $variables['last_search'] = $lastSearch;
 
   drupal_set_title($record->title);
@@ -1011,23 +1004,23 @@ function template_preprocess_ebsco_result(&$variables) {
  * @see ebsco-side-facets.tpl.php
  */
 function template_preprocess_ebsco_side_facets(&$variables) {
-  global $Document;
+  global $_ebsco_document;
 
-  if (empty($Document)) {
-    $Document = new EBSCODocument();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
   }
-  $Document->info();
+  $_ebsco_document->info();
 
-  $variables['record_count'] = $Document->record_count();
-  $variables['expanders'] = $Document->expanders();
-  $variables['limiters'] = $Document->limiters();
-  $variables['facets'] = $Document->facets();
+  $variables['record_count'] = $_ebsco_document->record_count();
+  $variables['expanders'] = $_ebsco_document->expanders();
+  $variables['limiters'] = $_ebsco_document->limiters();
+  $variables['facets'] = $_ebsco_document->facets();
   // Applied facets, limiters or expanders.
-  $variables['filters'] = $Document->filters();
+  $variables['filters'] = $_ebsco_document->filters();
   // Hidden parameters.
-  $variables['search_params'] = $Document->search_params();
+  $variables['search_params'] = $_ebsco_document->search_params();
   // Hidden parameters.
-  $variables['link_search_params'] = $Document->link_search_params();
+  $variables['link_search_params'] = $_ebsco_document->link_search_params();
 }
 
 /******************************************
@@ -1035,9 +1028,10 @@ function template_preprocess_ebsco_side_facets(&$variables) {
  ******************************************/
 
 /**
- * Returns an URL without the given filter parameter.
+ * Returns the current request's URL without the specified filter parameter.
  *
  * @return string
+ *   the filtered request URL
  */
 function remove_filter_link($filter) {
   $params = $_REQUEST;
@@ -1052,18 +1046,22 @@ function remove_filter_link($filter) {
 }
 
 /**
- * Performs a regex and replaces any url's with links containing themselves as the text.
+ * Convert URLs in the given string into HTML link tags.
+ *
+ * Performs a regex and replaces any URLs with links containing themselves
+ * as the text.
  *
  * @return string
+ *   the filtered request URL
  */
 function auto_link($string) {
   $linkedString = preg_replace_callback(
-        "/\b(https?):\/\/([-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]*)\b/i",
-        create_function(
-            '$matches',
-            'return "<a href=\'".($matches[0])."\'>".($matches[0])."</a>";'
-        ),
-        $string
-    );
+    "/\b(https?):\/\/([-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]*)\b/i",
+    create_function(
+      '$matches',
+      'return "<a href=\'".($matches[0])."\'>".($matches[0])."</a>";'
+    ),
+    $string
+  );
   return $linkedString;
 }

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * EBSCO Response class.
+ * @file
+ * The EBSCO Response object.
  *
  * PHP version 5
- *
  *
  * Copyright [2017] [EBSCO Information Services]
  *
@@ -22,7 +22,6 @@
  */
 
 require_once 'sanitizer.class.php';
-
 
 /**
  * EBSCOResponse class.

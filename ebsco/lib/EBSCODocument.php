@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * The EBSCO Document model class.
  *
  * It provides all the methods and properties needed for :
@@ -9,7 +10,6 @@
  * - displaying statistics about the search, etc.
  *
  * PHP version 5
- *
  *
  * Copyright [2017] [EBSCO Information Services]
  *
@@ -28,6 +28,7 @@
 
 require_once 'EBSCOAPI.php';
 require_once 'EBSCORecord.php';
+
 /**
  *
  */

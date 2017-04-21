@@ -2,7 +2,8 @@
 
 /**
  * @file
- * EBSCOException class
+ * The EBSCO Connector and Exception classes.
+ *
  * Used when EBSCO API calls return error messages.
  *
  * Copyright [2017] [EBSCO Information Services]
@@ -21,7 +22,7 @@
  */
 
 /**
- *
+ * EBSCOException class.
  */
 class EBSCOException extends Exception {
   const CRITICAL_ERROR = 1;
@@ -35,7 +36,7 @@ class EBSCOException extends Exception {
 
 }
 /**
- *
+ * EBSCOConnector class.
  */
 class EBSCOConnector {
   /**
@@ -465,8 +466,7 @@ BODY;
               $return = new EBSCOException($error, $code);
             }
             else {
-              $return = new EBSCOException("HTTP {$code} : The request could not be understood
-                                by the server due to malformed syntax. Modify your search before retrying.");
+              $return = new EBSCOException("HTTP {$code} : The request could not be understood by the server due to malformed syntax. Modify your search before retrying.");
             }
           }
           catch (Exception $e) {
@@ -475,13 +475,11 @@ BODY;
           break;
 
         case self::HTTP_NOT_FOUND:
-          $return = new EBSCOException("HTTP {$code} : The resource you are looking for might 
-                        have been removed, had its name changed, or is temporarily unavailable.");
+          $return = new EBSCOException("HTTP {$code} : The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.");
           break;
 
         case self::HTTP_INTERNAL_SERVER_ERROR:
-          $return = new EBSCOException("HTTP {$code} : The server encountered an unexpected condition 
-                        which prevented it from fulfilling the request.");
+          $return = new EBSCOException("HTTP {$code} : The server encountered an unexpected condition which prevented it from fulfilling the request.");
           break;
 
         default:

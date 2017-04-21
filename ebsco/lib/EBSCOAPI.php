@@ -1,7 +1,8 @@
 <?php
 
 /**
- * EBSCO EDS API class.
+ * @file
+ * The EBSCO EDS API class.
  *
  * PHP version 5
  *
@@ -23,7 +24,6 @@
 
 require_once 'EBSCOConnector.php';
 require_once 'EBSCOResponse.php';
-
 
 /**
  * EBSCO API class.
