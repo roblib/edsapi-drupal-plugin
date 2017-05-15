@@ -1,6 +1,6 @@
-/*
- * The EBSCO module javascript
-  *
+/**
+ * @file
+ * The EBSCO module javascript.
  *
  * Copyright [2017] [EBSCO Information Services]
  *
@@ -9,17 +9,16 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- **/
+ */
 (function ($) {
     $(document).ready(function () {
 
-    // 
     var updatePublishDateSlider = function () {
         var from = parseInt($('#DT1').val());
         var min = 1000;
@@ -38,10 +37,9 @@
         });
     };
 
-
-    /*
+    /**
      * Self executing function
-     **/
+     */
     var onLoad = function () {
         // EBSCO/Search : Expand limiters
         $('._more_limiters').live('click', function (event) {
@@ -165,7 +163,7 @@
         // Retain search filters checkbox functionality
         $('#edit-remember').live('click', function (event) {
             $("#ebsco-basic-search-form :input[type='checkbox'][name^='filter[']").attr('checked', $(this).attr('checked'));
-        }); 
+        });
 
         // Advanced Search : handle 'Date Published from' limiter
         // Create the UI slider (if slider function is defined)

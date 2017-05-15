@@ -1,6 +1,8 @@
 <?php
- /*
- *
+
+/**
+ * @file
+ * EBSCO Drupal integration module.
  *
  * Copyright [2017] [EBSCO Information Services]
  *
@@ -9,91 +11,76 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-  */
+ */
+
 require_once 'lib/EBSCODocument.php';
 
-# global variable
-$Document = null;
+// Global variable.
+$_ebsco_document = NULL;
 
 
 /******************************************
  * Hooks
  ******************************************/
 
-
 /**
- * Implements hook_user_login.
- *
- * Redirects after login
- *
+ * Implements hook_user_login().
  */
 function ebsco_user_login(&$edit, $account) {
-    if (isset($_SESSION['EBSCO']['redirect'])) {
-        $_GET['destination'] = urldecode($_SESSION['EBSCO']['redirect']['destination']);
-        unset($_SESSION['EBSCO']['redirect']);
-    }
+
+  // Redirect after login.
+  if (isset($_SESSION['EBSCO']['redirect'])) {
+    $_GET['destination'] = urldecode($_SESSION['EBSCO']['redirect']['destination']);
+    unset($_SESSION['EBSCO']['redirect']);
+  }
 }
 
 /**
-* Implements hook_help.
-*
-* Displays help and module information.
-*
-* @param path
-*   Which path of the site we're using to display help
-* @param arg
-*   Array that holds the current path as returned from arg() function
-*/
+ * Implements hook_help().
+ */
 function ebsco_help($path, $arg) {
-    $output = "";
-    switch ($path) {
-        case "admin/help#ebsco":
-            $output .= '<h2>'.  t("Full-text articles and eBooks from EBSCOhost Discovery Services") .'</h2>';
-            $output .= '<p>'. t("EBSCO Discovery Service provides users with an easy, yet powerful means of accessing all of 
-                an institution's information resources through a single search.") .'</p>';
-            $output .= '<p>'. t("This is achieved by harvesting metadata from both internal (library) and external (database vendors) sources, 
-                and creating a pre-indexed service of unprecedented size and speed.") .'</p>';
-            $output .= '<p>'. t("Although the resulting collection can be massive in size and scope, the fact that it is indexed locally 
-                (on the EBSCOhost&reg; servers) allows for exceptionally fast search response times.") .'</p>';
-            $output .= '<p>'. t("As no two institutions are the same, EBSCO Discovery Service offers a vast array of customization options with 
-                regard to both the underlying collection of metadata as well as the front-end delivery of search results. 
-                All of this functionality is based upon the powerful EBSCOhost search experience familiar to researchers worldwide.") .'</p>';
-        break;
-    }
-    return $output;
+  $output = "";
+  switch ($path) {
+    case "admin/help#ebsco":
+      $output .= '<h2>' . t("Full-text articles and eBooks from EBSCOhost Discovery Services") . '</h2>';
+      $output .= '<p>' . t("EBSCO Discovery Service provides users with an easy, yet powerful means of accessing all of an institution's information resources through a single search.") . '</p>';
+      $output .= '<p>' . t("This is achieved by harvesting metadata from both internal (library) and external (database vendors) sources, and creating a pre-indexed service of unprecedented size and speed.") . '</p>';
+      $output .= '<p>' . t("Although the resulting collection can be massive in size and scope, the fact that it is indexed locally (on the EBSCOhost&reg; servers) allows for exceptionally fast search response times.") . '</p>';
+      $output .= '<p>' . t("As no two institutions are the same, EBSCO Discovery Service offers a vast array of customization options with regard to both the underlying collection of metadata as well as the front-end delivery of search results. All of this functionality is based upon the powerful EBSCOhost search experience familiar to researchers worldwide.") . '</p>';
+      break;
+  }
+  return $output;
 }
-
 
 /**
  * Implements hook_theme().
  */
 function ebsco_theme() {
-    $themes = array(
-        'ebsco_result' => array(
-            'template' => 'templates/ebsco-result'
-        ),
-        'ebsco_results' => array(
-            'template' => 'templates/ebsco-results'
-        ),
-        'ebsco_side_facets' => array(
-            'template' => 'templates/ebsco-side-facets'
-        ),
-        'ebsco_basic_search' => array(
-            'template' => 'templates/ebsco-basic-search'
-        ),
-        'ebsco_advanced_search' => array(
-            'template' => 'templates/ebsco-advanced-search'
-        )
-    );
-    return $themes;
+  $themes = array(
+    'ebsco_result' => array(
+      'template' => 'templates/ebsco-result',
+    ),
+    'ebsco_results' => array(
+      'template' => 'templates/ebsco-results',
+    ),
+    'ebsco_side_facets' => array(
+      'template' => 'templates/ebsco-side-facets',
+    ),
+    'ebsco_basic_search' => array(
+      'template' => 'templates/ebsco-basic-search',
+    ),
+    'ebsco_advanced_search' => array(
+      'template' => 'templates/ebsco-advanced-search',
+    ),
+  );
+  return $themes;
 }
-
 
 /**
  * Implements hook_permission().
@@ -104,315 +91,319 @@ function ebsco_theme() {
  * administration pages.
  */
 function ebsco_permission() {
-    return array(
-        'administer ebsco' => array(
-            'title' => t('Administer EBSCO')
-        ),
-        'use ebsco' => array(
-            'title' => t('Use EBSCO')
-        )
-    );
+  return array(
+    'administer ebsco' => array(
+      'title' => t('Administer EBSCO'),
+    ),
+    'use ebsco' => array(
+      'title' => t('Use EBSCO'),
+    ),
+  );
 }
-
 
 /**
  * Implements hook_admin().
- *
  */
 function ebsco_admin() {
-    $form = array();
+  $form = array();
 
-    $form['ebsco_credentials'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('EDS API credentials')
-    );
+  $form['ebsco_credentials'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('EDS API credentials'),
+  );
 
-    $form['ebsco_credentials']['ebsco_profile'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Profile Id'),
-        '#default_value' => variable_get('ebsco_profile'),
-        '#size' => 50,
-        '#description' => t("The API Profile Id."),
-        '#required' => TRUE
-    );
+  $form['ebsco_credentials']['ebsco_profile'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Profile Id'),
+    '#default_value' => variable_get('ebsco_profile'),
+    '#size' => 50,
+    '#description' => t("The API Profile Id."),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_credentials']['ebsco_user'] = array(
-        '#type' => 'textfield',
-        '#title' => t('User Id'),
-        '#default_value' => variable_get('ebsco_user'),
-        '#size' => 50,
-        '#description' => t("The API User Id."),
-        '#required' => TRUE
-    );
+  $form['ebsco_credentials']['ebsco_user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User Id'),
+    '#default_value' => variable_get('ebsco_user'),
+    '#size' => 50,
+    '#description' => t("The API User Id."),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_credentials']['ebsco_password'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Password'),
-        '#default_value' => variable_get('ebsco_password'),
-        '#size' => 50,
-        '#description' => t("The API password."),
-        '#required' => TRUE
-    );
+  $form['ebsco_credentials']['ebsco_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#default_value' => variable_get('ebsco_password'),
+    '#size' => 50,
+    '#description' => t("The API password."),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_credentials']['ebsco_interface'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Interface Id'),
-		'#default_value' => variable_get('ebsco_interface'),
-        '#size' => 50,
-        '#description' => t("The API Interface Id."),
-        '#required' => FALSE
-    );
+  $form['ebsco_credentials']['ebsco_interface'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Interface Id'),
+    '#default_value' => variable_get('ebsco_interface'),
+    '#size' => 50,
+    '#description' => t("The API Interface Id."),
+    '#required' => FALSE,
+  );
 
-    $form['ebsco_credentials']['ebsco_organization'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Organization Id'),
-		'#default_value' => variable_get('ebsco_organization'),
-        '#size' => 50,
-        '#description' => t("The API Organization Id."),
-        '#required' => FALSE
-    );
+  $form['ebsco_credentials']['ebsco_organization'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Organization Id'),
+    '#default_value' => variable_get('ebsco_organization'),
+    '#size' => 50,
+    '#description' => t("The API Organization Id."),
+    '#required' => FALSE,
+  );
 
-    $form['ebsco_credentials']['ebsco_local_ips'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Local IP addresses'),
-		'#default_value' => variable_get('ebsco_local_ips'),
-        '#size' => 100,
-        '#description' => t("Local IP address list for guest detection (ex: 127.0.0.1, 192.168.10.1, 172.18.12)"),
-        '#required' => FALSE
-    );
+  $form['ebsco_credentials']['ebsco_local_ips'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Local IP addresses'),
+    '#default_value' => variable_get('ebsco_local_ips'),
+    '#size' => 100,
+    '#description' => t("Local IP address list for guest detection (ex: 127.0.0.1, 192.168.10.1, 172.18.12)"),
+    '#required' => FALSE,
+  );
 
-    $form['ebsco_credentials']['ebsco_guest'] = array(
-        '#type' => 'radios',
-        '#title' => t('Guest ?'),
-        '#default_value' => variable_get('ebsco_guest', 0),
-        '#description' => t("The Guest session."),
-        '#options' => array(t('No'), t('Yes')),
-        '#required' => TRUE
-    );
+  $form['ebsco_credentials']['ebsco_guest'] = array(
+    '#type' => 'radios',
+    '#title' => t('Guest ?'),
+    '#default_value' => variable_get('ebsco_guest', 0),
+    '#description' => t("The Guest session."),
+    '#options' => array(t('No'), t('Yes')),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_general'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('General Settings')
-    );
+  $form['ebsco_general'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General Settings'),
+  );
 
-    $form['ebsco_general']['ebsco_default_limit'] = array(
-        '#type' => 'select',
-        '#title' => t('Default limit'),
-        '#default_value' => variable_get('ebsco_default_limit', 10),
-        '#description' => t("Default number of results per page."),
-        '#options' => EBSCODocument::limit_options(),
-        '#required' => TRUE
-    );
+  $form['ebsco_general']['ebsco_default_limit'] = array(
+    '#type' => 'select',
+    '#title' => t('Default limit'),
+    '#default_value' => variable_get('ebsco_default_limit', 10),
+    '#description' => t("Default number of results per page."),
+    '#options' => EBSCODocument::limit_options(),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_general']['ebsco_default_sort'] = array(
-        '#type' => 'select',
-        '#title' => t('Default sort'),
-        '#default_value' => variable_get('ebsco_default_sort', 'relevance'),
-        '#description' => t("Default sorting option."),
-        '#options' => EBSCODocument::sort_options(),
-        '#required' => TRUE
-    );
+  $form['ebsco_general']['ebsco_default_sort'] = array(
+    '#type' => 'select',
+    '#title' => t('Default sort'),
+    '#default_value' => variable_get('ebsco_default_sort', 'relevance'),
+    '#description' => t("Default sorting option."),
+    '#options' => EBSCODocument::sort_options(),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_general']['ebsco_default_amount'] = array(
-        '#type' => 'select',
-        '#title' => t('Default detail level'),
-        '#default_value' => variable_get('ebsco_default_amount', 'brief'),
-        '#description' => t("Default level of data detail."),
-        '#options' => EBSCODocument::amount_options(),
-        '#required' => TRUE
-    );
+  $form['ebsco_general']['ebsco_default_amount'] = array(
+    '#type' => 'select',
+    '#title' => t('Default detail level'),
+    '#default_value' => variable_get('ebsco_default_amount', 'brief'),
+    '#description' => t("Default level of data detail."),
+    '#options' => EBSCODocument::amount_options(),
+    '#required' => TRUE,
+  );
 
-    $form['ebsco_general']['ebsco_default_mode'] = array(
-        '#type' => 'select',
-        '#title' => t('Default search mode'),
-        '#default_value' => variable_get('ebsco_default_mode', 'all'),
-        '#description' => t("Default search mode."),
-        '#options' => EBSCODocument::mode_options(),
-        '#required' => TRUE
-    );
+  $form['ebsco_general']['ebsco_default_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('Default search mode'),
+    '#default_value' => variable_get('ebsco_default_mode', 'all'),
+    '#description' => t("Default search mode."),
+    '#options' => EBSCODocument::mode_options(),
+    '#required' => TRUE,
+  );
 
-    return system_settings_form($form);
+  return system_settings_form($form);
 }
-
 
 /**
  * Implements hook_menu().
  */
 function ebsco_menu() {
-    // Ths is a route
-    $items['ebsco/results'] = array(
-        'title' => 'EBSCO Results',
-        'page callback' => 'ebsco_results_page',
-        'access callback' => true,
-        'type' => MENU_CALLBACK
-    );
+  // Ths is a route.
+  $items['ebsco/results'] = array(
+    'title' => 'EBSCO Results',
+    'page callback' => 'ebsco_results_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
-    $items['ebsco/result'] = array(
-        'title' => 'EBSCO Record',
-        'page callback' => 'ebsco_result_page',
-        'access callback' => true,
-        'type' => MENU_CALLBACK
-    );
+  $items['ebsco/result'] = array(
+    'title' => 'EBSCO Record',
+    'page callback' => 'ebsco_result_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
-    $items['ebsco/pdf'] = array(
-        'title' => 'EBSCO Record',
-        'page callback' => 'ebsco_pdf_page',
-        'access callback' => true,
-        'type' => MENU_CALLBACK
-    );
+  $items['ebsco/pdf'] = array(
+    'title' => 'EBSCO Record',
+    'page callback' => 'ebsco_pdf_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
-    $items['ebsco/fulltext'] = array(
-        'title' => 'EBSCO Record',
-        'page callback' => 'ebsco_fulltext_page',
-        'access callback' => true,
-        'type' => MENU_CALLBACK
-    );
+  $items['ebsco/fulltext'] = array(
+    'title' => 'EBSCO Record',
+    'page callback' => 'ebsco_fulltext_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
-    $items['ebsco/advanced'] = array(
-        'title' => 'EBSCO advanced search',
-        'page callback' => 'ebsco_advanced_search_page',
-        'access callback' => true,
-        'type' => MENU_CALLBACK
-    );
+  $items['ebsco/advanced'] = array(
+    'title' => 'EBSCO advanced search',
+    'page callback' => 'ebsco_advanced_search_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
-    $items['admin/config/search/ebsco'] = array(
-        'title' => 'EBSCO settings',
-        'description' => 'Configure EBSCO Service.',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('ebsco_admin'),
-        'access arguments' => array('administer ebsco'),
-        'type' => MENU_NORMAL_ITEM
-    );
+  $items['admin/config/search/ebsco'] = array(
+    'title' => 'EBSCO settings',
+    'description' => 'Configure EBSCO Service.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ebsco_admin'),
+    'access arguments' => array('administer ebsco'),
+    'type' => MENU_NORMAL_ITEM,
+  );
 
-    return $items;
+  return $items;
 }
 
-
 /**
-* Implements hook_block_info().
-*/
+ * Implements hook_block_info().
+ */
 function ebsco_block_info() {
-    $blocks['ebsco_main'] = array(
-        'info'  => t('EBSCO Search Form'),
-        'cache' => DRUPAL_CACHE_PER_PAGE
-    );
+  $blocks['ebsco_main'] = array(
+    'info'  => t('EBSCO Search Form'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
 
-    $blocks['ebsco_facets'] = array(
-        'info'  => t('EBSCO Narrow Search'),
-        'cache' => DRUPAL_CACHE_PER_PAGE
-    );
+  $blocks['ebsco_facets'] = array(
+    'info'  => t('EBSCO Narrow Search'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
 
-    return $blocks;
+  return $blocks;
 }
-
 
 /**
-* Implements hook_block_view().
-*
-* Prepares the content of the block.
-*/
+ * Implements hook_block_view().
+ *
+ * Prepares the content of the block.
+ */
 function ebsco_block_view($delta = '') {
-    $params = $_GET;
-    switch ($delta) {
-        case 'ebsco_main':
-            $reject = isset($params['q']) && strpos('ebsco/advanced', $params['q']) !== false;
-            return array(
-                'content' => $reject ? '' : ebsco_basic_search_block()
-            );
-            break;
+  $params = $_GET;
+  $block = array();
+  switch ($delta) {
+    case 'ebsco_main':
+      $reject = isset($params['q']) && strpos('ebsco/advanced', $params['q']) !== FALSE;
+      $block['content'] = $reject ? '' : ebsco_basic_search_block();
+      break;
 
-        case 'ebsco_facets':
-            $reject = isset($params['q']) && strpos('ebsco/advanced', $params['q']) !== false;
-            $reject = $reject || (isset($params['edit']) && strpos('ebsco/results', $params['q']) !== false);
-            $reject = $reject || (isset($params['q']) && strpos('ebsco/result', $params['q']) !== false);
-            return array(
-                'content' => $reject ? '' : ebsco_side_facets_block()
-            );
-        break;
-    }
+    case 'ebsco_facets':
+      $reject = isset($params['q']) && strpos('ebsco/advanced', $params['q']) !== FALSE;
+      $reject = $reject || (isset($params['edit']) && strpos('ebsco/results', $params['q']) !== FALSE);
+      $reject = $reject || (isset($params['q']) && strpos('ebsco/result', $params['q']) !== FALSE);
+      $block['content'] = $reject ? '' : ebsco_side_facets_block();
+      break;
+  }
+  return $block;
 }
 
-
-/******************************************************
- * Page callbacks
- ******************************************************/
-
-
+/**
+ * EBSCO search results page callback.
+ */
 function ebsco_results_page() {
-    return theme('ebsco_results');
+  return theme('ebsco_results');
 }
 
-
+/**
+ * EBSCO search result page callback.
+ */
 function ebsco_result_page() {
-    $is_xhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
-    if ($is_xhr) {
-        print theme('ebsco_result');
-        return true;
-    } else {
-        return theme('ebsco_result');
-    }
+  $is_xhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
+  if ($is_xhr) {
+    print theme('ebsco_result');
+    return TRUE;
+  }
+  else {
+    return theme('ebsco_result');
+  }
 }
 
-
+/**
+ * EBSCO fulltext page callback.
+ */
 function ebsco_fulltext_page() {
-    $is_xhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
-    if (user_is_logged_in()) {
-        if ($is_xhr) {
-            print theme('ebsco_result');
-            return true;
-        } else {
-            return theme('ebsco_result');
-        }
-    } else {
-        $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
-        if ($is_xhr) {
-            echo "<script type=\"text/javascript\">window.location.href = '" . url('user') . "';</script>";
-            return;
-        } else {
-            drupal_goto('user');
-        }
+  $is_xhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest';
+  if (user_is_logged_in()) {
+    if ($is_xhr) {
+      print theme('ebsco_result');
+      return TRUE;
     }
+    else {
+      return theme('ebsco_result');
+    }
+  }
+  else {
+    $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
+    if ($is_xhr) {
+      echo "<script type=\"text/javascript\">window.location.href = '" . url('user') . "';</script>";
+      return;
+    }
+    else {
+      drupal_goto('user');
+    }
+  }
 }
 
-
+/**
+ * EBSCO pdf page callback.
+ */
 function ebsco_pdf_page() {
-    global $Document;
-    $params = $_REQUEST;
+  global $_ebsco_document;
+  $params = $_REQUEST;
 
-    if (user_is_logged_in()) {
-        if (empty($Document)) {
-            $Document = new EBSCODocument();
-        }
-        $Document->retrieve();
-        $record = $Document->record();
-        drupal_goto($record->pdf_link);
-    } else {
-        $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
-        drupal_goto('user');
+  if (user_is_logged_in()) {
+    if (empty($_ebsco_document)) {
+      $_ebsco_document = new EBSCODocument();
     }
+    $_ebsco_document->retrieve();
+    $record = $_ebsco_document->record();
+    drupal_goto($record->pdf_link);
+  }
+  else {
+    $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
+    drupal_goto('user');
+  }
 }
 
-
+/**
+ * EBSCO advanced search page callback.
+ */
 function ebsco_advanced_search_page() {
-    return theme('ebsco_advanced_search');
+  return theme('ebsco_advanced_search');
 }
 
-
+/**
+ * EBSCO basic search page callback.
+ */
 function ebsco_basic_search_block() {
-    return theme('ebsco_basic_search');
+  return theme('ebsco_basic_search');
 }
 
-
+/**
+ * EBSCO side facets block callback.
+ */
 function ebsco_side_facets_block() {
-    return theme('ebsco_side_facets');
+  return theme('ebsco_side_facets');
 }
-
-
 
 /******************************************************
  * Form builders, form handlers and templates handlers
  ******************************************************/
-
 
 /**
  * Form builder; Output a sort form for the search results.
@@ -420,40 +411,39 @@ function ebsco_side_facets_block() {
  * @ingroup forms
  */
 function ebsco_sort_form() {
-    $params = $_REQUEST;
+  $params = $_REQUEST;
 
-    $form = array(
-        '#attributes' => array('class' => 'sort-form'),
-        '#method'     => 'get'
-    );
+  $form = array(
+    '#attributes' => array('class' => 'sort-form'),
+    '#method'     => 'get',
+  );
 
-    $options = EBSCODocument::amount_options();
-    $values = array_values($options);
-    $default_value = isset($params['amount']) ? $params['amount'] : variable_get('ebsco_default_amount', 'brief');
-    $form['mode'] = array(
-        '#id'            => 'ebsco-amount',
-        '#type'          => 'select',
-        '#title'         => t('Page options'),
-        '#default_value' => $default_value,
-        '#options'       => $options,
-        '#attributes'    => array('class' => array('form-select', '_jump_menu'))
-    );
+  $options = EBSCODocument::amount_options();
+  $values = array_values($options);
+  $default_value = isset($params['amount']) ? $params['amount'] : variable_get('ebsco_default_amount', 'brief');
+  $form['mode'] = array(
+    '#id'            => 'ebsco-amount',
+    '#type'          => 'select',
+    '#title'         => t('Page options'),
+    '#default_value' => $default_value,
+    '#options'       => $options,
+    '#attributes'    => array('class' => array('form-select', '_jump_menu')),
+  );
 
-    $options = EBSCODocument::sort_options();
-    $values = array_values($options);
-    $default_value = isset($params['sort']) ? $params['sort'] : $values[0];
-    $form['sort'] = array(
-        '#id'            => 'ebsco-sort',
-        '#type'          => 'select',
-        '#title'         => t('Sort'),
-        '#default_value' => $default_value,
-        '#options'       => $options,
-        '#attributes'    => array('class' => array('form-select', '_jump_menu'))
-    );
+  $options = EBSCODocument::sort_options();
+  $values = array_values($options);
+  $default_value = isset($params['sort']) ? $params['sort'] : $values[0];
+  $form['sort'] = array(
+    '#id'            => 'ebsco-sort',
+    '#type'          => 'select',
+    '#title'         => t('Sort'),
+    '#default_value' => $default_value,
+    '#options'       => $options,
+    '#attributes'    => array('class' => array('form-select', '_jump_menu')),
+  );
 
-    return $form;
+  return $form;
 }
-
 
 /**
  * Form builder; Output a search form for the search block's search box.
@@ -461,72 +451,73 @@ function ebsco_sort_form() {
  * @ingroup forms
  */
 function ebsco_basic_search_form() {
-    $params = $_REQUEST;
+  $params = $_REQUEST;
 
-    $form = array(
-        '#attributes' => array('class' => 'search-form'),
-        '#action'     => url('ebsco/results'),
-        '#method'     => 'get'
-    );
+  $form = array(
+    '#attributes' => array('class' => 'search-form'),
+    '#action'     => url('ebsco/results'),
+    '#method'     => 'get',
+  );
 
-    $form['basic']['q'] = array(
-        '#type'          => 'hidden',
-        '#default_value' => 'ebsco/results'
-    );
+  $form['basic']['q'] = array(
+    '#type'          => 'hidden',
+    '#default_value' => 'ebsco/results',
+  );
 
-    $default_value = isset($params['lookfor']) ? $params['lookfor'] : '';
-    $form['basic']['lookfor'] = array(
-        '#id'            => 'ebsco-basic-search-lookfor',
-        '#type'          => 'textfield',
-        '#size'          => 40,
-        '#default_value' => $default_value,
-        '#attributes'    => array('title' => t('Enter the terms you wish to search for.')),
-    );
+  $default_value = isset($params['lookfor']) ? $params['lookfor'] : '';
+  $form['basic']['lookfor'] = array(
+    '#id'            => 'ebsco-basic-search-lookfor',
+    '#type'          => 'textfield',
+    '#size'          => 40,
+    '#default_value' => $default_value,
+    '#attributes'    => array('title' => t('Enter the terms you wish to search for.')),
+  );
 
-    $default_value = isset($params['type']) ? $params['type'] : '';
-    $form['basic']['type'] = array(
-        '#id'            => 'ebsco-basic-search-type',
-        '#type'          => 'select',
-        '#options'       => EBSCODocument::basic_search_type_options(),
-        '#default_value' => $default_value
-    );
+  $default_value = isset($params['type']) ? $params['type'] : '';
+  $form['basic']['type'] = array(
+    '#id'            => 'ebsco-basic-search-type',
+    '#type'          => 'select',
+    '#options'       => EBSCODocument::basic_search_type_options(),
+    '#default_value' => $default_value,
+  );
 
-    $form['basic']['submit'] = array(
-        '#id'    => 'ebsco-basic-search-submit',
-        '#type'  => 'submit',
-        '#value' => t('Search')
-    );
+  $form['basic']['submit'] = array(
+    '#id'    => 'ebsco-basic-search-submit',
+    '#type'  => 'submit',
+    '#value' => t('Search'),
+  );
 
-    $link = url('ebsco/advanced');
-    $form['basic']['links'] = array(
-        '#type'  => 'fieldset',
-        '#value' => "<a href=\"$link\">" . t('Advanced search') . "</a>"
-    );
+  $link = url('ebsco/advanced');
+  $form['basic']['links'] = array(
+    '#type'  => 'fieldset',
+    '#value' => "<a href=\"$link\">" . t('Advanced search') . "</a>",
+  );
 
-    $form['basic']['offscreen'] = array(
-        '#type'  => 'container'
-    );
+  $form['basic']['offscreen'] = array(
+    '#type'  => 'container',
+  );
 
-    if (isset($params['filter'])) {
-        foreach($params['filter'] as $key => $value) {
-            $form['basic']['offscreen']['group'.$key]['filter[]'] = array(
-                '#id'            => 'ebsco-basic-search-filter' . $key,
-                '#type'          => 'checkbox',
-                '#default_value' => $value, // doesn't work
-                '#attributes'    => array('checked' => 'checked', 'value' => $value)
-								
-            );
-        }
+  if (isset($params['filter'])) {
+    foreach ($params['filter'] as $key => $value) {
+      $form['basic']['offscreen']['group' . $key]['filter[]'] = array(
+        '#id'            => 'ebsco-basic-search-filter' . $key,
+        '#type'          => 'checkbox',
+      // doesn't work.
+        '#default_value' => $value,
+        '#attributes'    => array('checked' => 'checked', 'value' => $value),
 
-        $form['basic']['remember'] = array(
-            '#type'          => 'checkbox',
-            '#title'         => t('Retain my current filters'),
-            '#prefix'        => '<br />',
-            '#default_value' => true
-        );
+      );
     }
 
-    return $form;
+    $form['basic']['remember'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Retain my current filters'),
+      '#prefix'        => '<br />',
+      '#default_value' => TRUE,
+    );
+  }
+
+  return $form;
 }
 
 /**
@@ -535,260 +526,272 @@ function ebsco_basic_search_form() {
  * @ingroup forms
  */
 function ebsco_advanced_search_form() {
-    global $Document;
-    $params = $_REQUEST;
+  global $_ebsco_document;
+  $params = $_REQUEST;
 
-    if (isset($params['edit']) && !empty($params['edit'])) {
-        $query = $_SESSION['EBSCO']['last-search']['query'];
-        parse_str($query, $new_params);
-        $params = $_REQUEST = array_merge($_REQUEST, $new_params);
+  if (isset($params['edit']) && !empty($params['edit'])) {
+    $query = $_SESSION['EBSCO']['last-search']['query'];
+    parse_str($query, $new_params);
+    $params = $_REQUEST = array_merge($_REQUEST, $new_params);
+  }
+  $counter = isset($params['group']) ? count($params['group']) : 3;
+
+  $form = array(
+    '#attributes' => array('class' => 'search-form'),
+    '#action'     => url('ebsco/advanced'),
+  );
+
+  $form['advanced'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Advanced Search'),
+    '#collapsible' => FALSE,
+    '#collapsed'   => FALSE,
+  );
+
+  $form['advanced']['rows'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => '',
+  );
+
+  for ($i = 0; $i < $counter; $i++) {
+    $form['advanced']['rows']['group' . $i] = array(
+      '#type'       => 'fieldset',
+      '#tree'       => TRUE,
+      '#attributes' => array('class' => array('_advanced-row')),
+    );
+
+    $default_value = isset($params['group'][$i]['bool']) ? $params['group'][$i]['bool'] : '';
+    if ($i > 0) {
+      $form['advanced']['rows']['group' . $i]['bool'] = array(
+        '#id'            => 'ebsco-advanced-search-bool' . $i,
+        '#type'          => 'select',
+        '#default_value' => $default_value,
+        '#options'       => EBSCODocument::bool_options(),
+      );
     }
-    $counter = isset($params['group']) ? count($params['group']) : 3;
-
-    $form = array(
-        '#attributes' => array('class' => 'search-form'),
-        '#action'     => url('ebsco/advanced')
-    );
-
-    $form['advanced'] = array(
-        '#type'        => 'fieldset',
-        '#title'       => t('Advanced Search'),
-        '#collapsible' => false,
-        '#collapsed'   => false
-    );
-
-    $form['advanced']['rows'] = array(
-        '#type'        => 'fieldset',
-        '#title'       => ''
-    );
-
-    for ($i = 0; $i < $counter; $i++) {
-        $form['advanced']['rows']['group' . $i] = array(
-            '#type'       => 'fieldset',
-            '#tree'       => true,
-            '#attributes' => array('class' => array('_advanced-row'))
-        );
-
-        $default_value = isset($params['group'][$i]['bool']) ? $params['group'][$i]['bool'] : '';
-        if ($i > 0) {
-            $form['advanced']['rows']['group' . $i]['bool'] = array(
-                '#id'            => 'ebsco-advanced-search-bool' . $i,
-                '#type'          => 'select',
-                '#default_value' => $default_value,
-                '#options'       => EBSCODocument::bool_options()
-            );
-        } else {
-            $form['advanced']['rows']['group' . $i]['bool'] = array(
-                '#id'            => 'ebsco-advanced-search-bool' . $i,
-                '#type'          => 'hidden',
-                '#default_value' => 'AND'
-            );
-        }
-
-        $title = $i == 0 ? t('Search for :') : '';
-        $default_value = isset($params['group'][$i]['lookfor']) ? $params['group'][$i]['lookfor'] : '';
-        $form['advanced']['rows']['group' . $i]['lookfor'] = array(
-            '#id'            => 'ebsco-advanced-search-lookfor' . $i,
-            '#type'          => 'textfield',
-            '#size'          => 30,
-            '#default_value' => $default_value,
-            '#title'         => $title,
-            '#attributes'    => array('title' => t('Enter the terms you wish to search for.'))
-        );
-
-        $default_value = isset($params['group'][$i]['type']) ? $params['group'][$i]['type'] : '';
-        $form['advanced']['rows']['group' . $i]['type'] = array(
-            '#id'            => 'ebsco-advanced-search-type' . $i,
-            '#type'          => 'select',
-            '#default_value' => $default_value,
-            '#title'         => t('in'),
-            '#options'       => EBSCODocument::advanced_search_type_options()
-        );
-
-        if ($i > 2) {
-            $form['advanced']['rows']['group' . $i]['remove'] = array(
-                '#markup' => '<div class="delete-search"><a href="#" class="delete _delete_row" id="delete_search_link_' . $i . '">' . t('Remove Search Field') . '</a></div>'
-            );
-        }
+    else {
+      $form['advanced']['rows']['group' . $i]['bool'] = array(
+        '#id'            => 'ebsco-advanced-search-bool' . $i,
+        '#type'          => 'hidden',
+        '#default_value' => 'AND',
+      );
     }
 
-    $form['advanced']['rows']['add_row'] = array(
-        '#type'  => 'fieldset',
-        '#value' => "<a class=\"add _add_row\" href=\"#\">". t('Add Search Field') . "</a>"
+    $title = $i == 0 ? t('Search for :') : '';
+    $default_value = isset($params['group'][$i]['lookfor']) ? $params['group'][$i]['lookfor'] : '';
+    $form['advanced']['rows']['group' . $i]['lookfor'] = array(
+      '#id'            => 'ebsco-advanced-search-lookfor' . $i,
+      '#type'          => 'textfield',
+      '#size'          => 30,
+      '#default_value' => $default_value,
+      '#title'         => $title,
+      '#attributes'    => array('title' => t('Enter the terms you wish to search for.')),
     );
 
-    $items = array(
+    $default_value = isset($params['group'][$i]['type']) ? $params['group'][$i]['type'] : '';
+    $form['advanced']['rows']['group' . $i]['type'] = array(
+      '#id'            => 'ebsco-advanced-search-type' . $i,
+      '#type'          => 'select',
+      '#default_value' => $default_value,
+      '#title'         => t('in'),
+      '#options'       => EBSCODocument::advanced_search_type_options(),
+    );
+
+    if ($i > 2) {
+      $form['advanced']['rows']['group' . $i]['remove'] = array(
+        '#markup' => '<div class="delete-search"><a href="#" class="delete _delete_row" id="delete_search_link_' . $i . '">' . t('Remove Search Field') . '</a></div>',
+      );
+    }
+  }
+
+  $form['advanced']['rows']['add_row'] = array(
+    '#type'  => 'fieldset',
+    '#value' => "<a class=\"add _add_row\" href=\"#\">" . t('Add Search Field') . "</a>",
+  );
+
+  $items = array(
         array(
-            'url'   => url('ebsco/results'),
-            'title' => t('Basic search')
+          'url'   => url('ebsco/results'),
+          'title' => t('Basic search'),
         ),
         array(
-            'url'   => url('ebsco/advanced'),
-            'title' => t('Advanced search')
-        )
-    );
-    $links = array();
-    foreach ($items as $item) {
-        $links[] = "<a href=\"{$item['url']}\">{$item['title']}</a>";
+          'url'   => url('ebsco/advanced'),
+          'title' => t('Advanced search'),
+        ),
+  );
+  $links = array();
+  foreach ($items as $item) {
+    $links[] = "<a href=\"{$item['url']}\">{$item['title']}</a>";
+  }
+  $form['advanced']['links'] = array(
+    '#type'  => 'fieldset',
+    '#value' => implode(' | ', $links),
+  );
+
+  $form['advanced']['modes'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Search modes'),
+  );
+
+  $form['advanced']['modes']['mode'] = array(
+    '#type'          => 'radios',
+    '#default_value' => 'all',
+    '#options'       => EBSCODocument::mode_options(),
+  );
+
+  $expanders = $_ebsco_document->expanders();
+  $limiters = $_ebsco_document->limiters();
+  $options = array('' => TRUE);
+  foreach ($expanders as $key => $expander) {
+    $options[$expander['Action']] = TRUE;
+  }
+  foreach ($limiters as $key => $limiter) {
+    if (!empty($limiter['Values'])) {
+      $options[$limiter['Id']] = TRUE;
+      foreach ($limiter['Values'] as $value) {
+        $options[str_replace('value', $value['Value'], $value['Action'])] = TRUE;
+      }
     }
-    $form['advanced']['links'] = array(
-        '#type'  => 'fieldset',
-        '#value' => implode(' | ', $links)
-    );
-
-    $form['advanced']['modes'] = array(
-        '#type'  => 'fieldset',
-        '#title' => t('Search modes')
-    );
-
-    $form['advanced']['modes']['mode'] = array(
-        '#type'          => 'radios',
-        '#default_value' => 'all',
-        '#options'       => EBSCODocument::mode_options()
-    );
-
-    $expanders = $Document->expanders();
-    $limiters = $Document->limiters();
-    $options = array('' => true);
-    foreach($expanders as $key => $expander) {
-        $options[$expander['Action']] = true;
+    else {
+      $options[str_replace('value', 'y', $limiter['Action'])] = TRUE;
     }
-    foreach($limiters as $key => $limiter) {
-        if (!empty($limiter['Values'])) {
-            $options[$limiter['Id']] = true;
-            foreach($limiter['Values'] as $value) {
-                $options[str_replace('value', $value['Value'], $value['Action'])] = true;
-            }
-        } else {
-            $options[str_replace('value', 'y', $limiter['Action'])] = true;
-        }
+  }
+
+  $form['advanced']['expanders'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Expand results'),
+  );
+
+  $form['advanced']['limiters'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Limit results'),
+  );
+
+  $children = array();
+  foreach ($expanders as $key => $expander) {
+    $element = array(
+      '#type'          => 'checkbox',
+      '#id'            => 'ebsco-advanced-search-expander' . $key,
+      '#title'         => $expander['Label'],
+      '#title_display' => 'after',
+      '#name'          => 'filter[]',
+      '#attributes'    => array('value' => $expander['Action']),
+      '#checked'       => $expander['selected'],
+    );
+    $element['#children'] = ($key != 0) ? '<br />' : '';
+    $element['#children'] .= theme('checkbox', array('element' => $element));
+
+    $children[] = theme('form_element', array('element' => $element));
+
+  }
+
+  $form['advanced']['expanders']['filter'] = array(
+    '#type'      => 'checkboxes',
+    '#validated' => TRUE,
+    '#options'   => $options,
+    '#children'  => implode('', $children),
+  );
+
+  $checkboxes = $selects = $dates = array();
+  foreach ($limiters as $key => $limiter) {
+    if ($limiter['Type'] == 'text' || $limiter['Type'] == 'select') {
+      $element = array(
+        '#type'          => 'checkbox',
+        '#id'            => 'ebsco-advanced-search-limiter' . $limiter['Id'],
+        '#title'         => $limiter['Label'],
+        '#title_display' => 'after',
+        '#name'          => 'filter[]',
+        '#attributes'    => array(
+          'value' => str_replace('value', 'y', $limiter['Action']),
+        ),
+        '#checked'       => $limiter['selected'],
+
+      );
+      $element['#children'] = ($key != 0) ? '<br />' : '';
+      if (!isset($element['#children'])) {
+        $element['#children'] = "";
+      }
+      $element['#children'] .= theme('checkbox', array('element' => $element));
+      $checkboxes[] = theme('form_element', array('element' => $element));
     }
-
-    $form['advanced']['expanders'] = array(
-        '#type'  => 'fieldset',
-        '#title' => t('Expand results')
-    );
-
-    $form['advanced']['limiters'] = array(
-        '#type'  => 'fieldset',
-        '#title' => t('Limit results')
-    );
-
-    $children = array();
-    foreach($expanders as $key => $expander) {
-        $element = array(
-            '#type'          => 'checkbox',
-            '#id'            => 'ebsco-advanced-search-expander' . $key,
-            '#title'         => $expander['Label'],
-            '#title_display' => 'after',
-            '#name'          => 'filter[]',
-            '#attributes'    => array('value' => $expander['Action']),
-            '#checked'       => $expander['selected']	
-        );
-		$element['#children'] = ($key != 0) ? '<br />' : '';
-        $element['#children'] .= theme('checkbox', array('element' => $element));
-		
-        $children[] = theme('form_element', array('element' => $element));
-
+    elseif ($limiter['Type'] == 'multiselectvalue') {
+      $opts = array('' => t('All'));
+      foreach ($limiter['Values'] as $value) {
+        $opts[$value['Action']] = $value['Value'];
+      }
+      $element = array(
+        '#type'          => 'select',
+        '#multiple'      => TRUE,
+        '#size'          => 4,
+        '#id'            => 'ebsco-advanced-search-limiter' . $limiter['Id'],
+        '#title'         => $limiter['Label'],
+        '#name'          => 'filter[]',
+        '#options'       => $opts,
+      // Empty value means "All".
+        '#default_value' => $limiter['selected'],
+        '#value'         => $limiter['selected'],
+        '#attributes'    => array('class' => array('multiselectvalue'), 'multiple' => 'multiple'),
+      );
+      $element['#children'] = theme('select', array('element' => $element));
+      $selects[] = theme('form_element', array('element' => $element));
     }
-
-    $form['advanced']['expanders']['filter'] = array(
-        '#type'      => 'checkboxes',
-        '#validated' => true,
-        '#options'   => $options,
-        '#children'  => implode('', $children)
-    );
-
-    $checkboxes = $selects = $dates = array(); 
-    foreach($limiters as $key => $limiter) {
-        if ($limiter['Type'] == 'text' || $limiter['Type'] == 'select') {
-            $element = array(
-                '#type'          => 'checkbox',
-                '#id'            => 'ebsco-advanced-search-limiter' . $limiter['Id'],
-                '#title'         => $limiter['Label'],
-                '#title_display' => 'after',
-                '#name'          => 'filter[]',
-                '#attributes'    => array('value' => str_replace('value', 'y', $limiter['Action'])),
-                '#checked'       => $limiter['selected']
-				
-            );
-            $element['#children'] = ($key != 0) ? '<br />' : '';
-			if (!isset($element['#children']))
-				{$element['#children']="";}
-            $element['#children'] .= theme('checkbox', array('element' => $element));
-            $checkboxes[] = theme('form_element', array('element' => $element));
-        } else if ($limiter['Type'] == 'multiselectvalue') {
-            $opts = array('' => t('All'));
-            foreach($limiter['Values'] as $value) {
-                $opts[$value['Action']] = $value['Value'];
-            }
-            $element = array(
-                '#type'          => 'select',
-                '#multiple'      => true,
-                '#size'          => 4,
-                '#id'            => 'ebsco-advanced-search-limiter' . $limiter['Id'],
-                '#title'         => $limiter['Label'],
-                '#name'          => 'filter[]',
-                '#options'       => $opts,
-                '#default_value' => $limiter['selected'], // empty value means "All"
-                '#value'         => $limiter['selected'],
-                '#attributes'    => array('class' => array('multiselectvalue'), 'multiple' => 'multiple')
-            );
-            $element['#children'] = theme('select', array('element' => $element));
-            $selects[] = theme('form_element', array('element' => $element));
-        } else if ($limiter['Type'] == 'ymrange') {
-            $value = $limiter['selected'] ? $limiter['selected'] : '';
-            $displayValue = str_replace(array('addlimiter(DT1:', '-1/2013-1)'), array('', ''), $value);
-            $element = array(
-                '#type'              => 'textfield',
-                '#id'                => $limiter['Id'],
-                '#title'             => $limiter['Label'],
-                '#value'             => $displayValue,
-                '#name'              => $limiter['Id'],
-                '#autocomplete_path' => null,
-                '#attributes'        => array('size' => 4, 'maxlength' => 4, 'class' => array('yearbox'))
-            );
-            $element['#children'] = theme('textfield', array('element' => $element));
-            $element['#children'] .= '<input id="ebsco-advanced-search-limiter' . $limiter['Id'] . '" type="hidden" name="filter[]" value="' . $value . '"/>';
-            $element['#children'] .= '<div id="ebsco-advanced-search-slider' . $limiter['Id'] . '" class="dateSlider"></div>';
-            $dates[] = theme('form_element', array('element' => $element));
-        }
+    elseif ($limiter['Type'] == 'ymrange') {
+      $value = $limiter['selected'] ? $limiter['selected'] : '';
+      $displayValue = str_replace(array('addlimiter(DT1:', '-1/2013-1)'), array('', ''), $value);
+      $element = array(
+        '#type'              => 'textfield',
+        '#id'                => $limiter['Id'],
+        '#title'             => $limiter['Label'],
+        '#value'             => $displayValue,
+        '#name'              => $limiter['Id'],
+        '#autocomplete_path' => NULL,
+        '#attributes'        => array(
+          'size'          => 4,
+          'maxlength'     => 4,
+          'class'         => array('yearbox'),
+        ),
+      );
+      $element['#children'] = theme('textfield', array('element' => $element));
+      $element['#children'] .= '<input id="ebsco-advanced-search-limiter' . $limiter['Id'] . '" type="hidden" name="filter[]" value="' . $value . '"/>';
+      $element['#children'] .= '<div id="ebsco-advanced-search-slider' . $limiter['Id'] . '" class="dateSlider"></div>';
+      $dates[] = theme('form_element', array('element' => $element));
     }
+  }
 
-    $form['advanced']['limiters']['checkboxes'] = array(
-        '#type'      => 'checkboxes',
-        '#validated' => true,
-        '#options'   => $options,
-        '#children'  => implode('', $checkboxes),
-    );
+  $form['advanced']['limiters']['checkboxes'] = array(
+    '#type'      => 'checkboxes',
+    '#validated' => TRUE,
+    '#options'   => $options,
+    '#children'  => implode('', $checkboxes),
+  );
 
-    $form['advanced']['limiters']['dates'] = array(
-        '#type'      => 'container',
-        '#validated' => true,
-        '#prefix'    => '<hr />',
-        '#children'  => implode('', $dates)
-    );
+  $form['advanced']['limiters']['dates'] = array(
+    '#type'      => 'container',
+    '#validated' => TRUE,
+    '#prefix'    => '<hr />',
+    '#children'  => implode('', $dates),
+  );
 
-    $form['advanced']['limiters']['selects'] = array(
-        '#type'      => 'container',
-        '#prefix'    => '<hr />',
-        '#validated' => true,
-        '#children'  => implode('', $selects)
-    );
+  $form['advanced']['limiters']['selects'] = array(
+    '#type'      => 'container',
+    '#prefix'    => '<hr />',
+    '#validated' => TRUE,
+    '#children'  => implode('', $selects),
+  );
 
-    $form['advanced']['submit'] = array(
-        '#id'    => 'ebsco-advanced-search-submit',
-        '#type'  => 'submit',
-        '#value' => t('Search')
-    );
+  $form['advanced']['submit'] = array(
+    '#id'    => 'ebsco-advanced-search-submit',
+    '#type'  => 'submit',
+    '#value' => t('Search'),
+  );
 
-    $form['advanced']['clear'] = array(
-        '#markup'  => '<input id="ebsco-advanced-search-clear" class="form-submit" type="reset" value="' . t('Clear') . '" name="reset">'
-    );
+  $reset_button_text = t('Clear');
+  $form['advanced']['clear'] = array(
+    '#markup'  => '<input id="ebsco-advanced-search-clear" class="form-submit" type="reset" value="' . $reset_button_text . '" name="reset">',
+  );
 
-    return $form;
+  return $form;
 }
-
 
 /**
  * Form validation handler for ebsco_basic_search_form().
@@ -796,12 +799,11 @@ function ebsco_advanced_search_form() {
  * @see ebsco_basic_search_form_submit()
  */
 function ebsco_basic_search_form_validate($form, &$form_state) {
-    $params = $form_state['values'];
-    if (empty($params['lookfor'])) {
-        form_set_error('lookfor', t('Please enter some keywords.'));
-    }
+  $params = $form_state['values'];
+  if (empty($params['lookfor'])) {
+    form_set_error('lookfor', t('Please enter some keywords.'));
+  }
 }
-
 
 /**
  * Form validation handler for ebsco_advanced_search_form().
@@ -809,14 +811,13 @@ function ebsco_basic_search_form_validate($form, &$form_state) {
  * @see ebsco_advanced_search_form_submit()
  */
 function ebsco_advanced_search_form_validate($form, &$form_state) {
-    $params = $form_state['values'];
-    if (empty($params['group0']['lookfor']) &&
+  $params = $form_state['values'];
+  if (empty($params['group0']['lookfor']) &&
         empty($params['group1']['lookfor']) &&
         empty($params['group2']['lookfor'])) {
-        form_set_error('group0][lookfor', t('Please enter some keywords.'));
-    }
+    form_set_error('group0][lookfor', t('Please enter some keywords.'));
+  }
 }
-
 
 /**
  * Form submission handler for ebsco_basic_search_form().
@@ -824,17 +825,16 @@ function ebsco_advanced_search_form_validate($form, &$form_state) {
  * @see ebsco_basic_search_form_validate()
  */
 function ebsco_basic_search_form_submit($form, &$form_state) {
-    $params = $form_state['values'];
-    $allowed_keys = array('lookfor', 'type');
-    foreach($params as $key => $value) {
-        if (!in_array($key, $allowed_keys)) {
-            unset($params[$key]);
-        }
+  $params = $form_state['values'];
+  $allowed_keys = array('lookfor', 'type');
+  foreach ($params as $key => $value) {
+    if (!in_array($key, $allowed_keys)) {
+      unset($params[$key]);
     }
-    $form_state['rebuild'] = false;
-    $form_state['redirect'] = array('ebsco/results', array('query' => $params));
+  }
+  $form_state['rebuild'] = FALSE;
+  $form_state['redirect'] = array('ebsco/results', array('query' => $params));
 }
-
 
 /**
  * Form submission handler for ebsco_advanced_search_form().
@@ -842,38 +842,39 @@ function ebsco_basic_search_form_submit($form, &$form_state) {
  * @see ebsco_advanced_search_form_validate()
  */
 function ebsco_advanced_search_form_submit($form, &$form_state) {
-    $params = $_REQUEST;
-    $new_params = array();
-    $allowed_keys = array('filter', 'mode');
+  $params = $_REQUEST;
+  $new_params = array();
+  $allowed_keys = array('filter', 'mode');
 
-    foreach($params as $key => $value) {
-        if (!(in_array($key, $allowed_keys) || strpos($key, 'group') !== false)) {
-            unset($params[$key]);
-        } else {
-            if ($key == 'filter') {
-                foreach($value as $k => $v) {
-                    if (empty($v)) {
-                        unset($params[$key][$k]);
-                    }
-                }
-            } else if (empty($value)) {
-                unset($params[$key]);
-            }
-        }
+  foreach ($params as $key => $value) {
+    if (!(in_array($key, $allowed_keys) || strpos($key, 'group') !== FALSE)) {
+      unset($params[$key]);
     }
-
-    foreach($params as $key => $value) {
-        if (strpos($key, 'group') !== false) {
-            $new_params['group'][] = $value;
-            unset($params[$key]);
+    else {
+      if ($key == 'filter') {
+        foreach ($value as $k => $v) {
+          if (empty($v)) {
+            unset($params[$key][$k]);
+          }
         }
+      }
+      elseif (empty($value)) {
+        unset($params[$key]);
+      }
     }
-    $params = array_merge($params, $new_params);
+  }
 
-    $form_state['rebuild'] = false;
-    $form_state['redirect'] = array('ebsco/results', array('query' => $params));
+  foreach ($params as $key => $value) {
+    if (strpos($key, 'group') !== FALSE) {
+      $new_params['group'][] = $value;
+      unset($params[$key]);
+    }
+  }
+  $params = array_merge($params, $new_params);
+
+  $form_state['rebuild'] = FALSE;
+  $form_state['redirect'] = array('ebsco/results', array('query' => $params));
 }
-
 
 /**
  * Process variables for ebsco-results.tpl.php.
@@ -881,48 +882,48 @@ function ebsco_advanced_search_form_submit($form, &$form_state) {
  * @see ebsco-results.tpl.php
  */
 function template_preprocess_ebsco_results(&$variables) {
-    global $Document;
-    $params = $_REQUEST;
+  global $_ebsco_document;
+  $params = $_REQUEST;
 
-    $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
-    if (empty($Document)) {
-        $Document = new EBSCODocument();
+  $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
+  }
+
+  $title = !empty($params['lookfor']) ? ' - ' . $params['lookfor'] : '';
+  drupal_set_title('Search results' . $title);
+
+  $_ebsco_document->search();
+
+  $variables['records'] = $_ebsco_document->records();
+  $variables['record_start'] = $_ebsco_document->record_start();
+  $variables['record_end'] = $_ebsco_document->record_end();
+  $variables['record_count'] = $_ebsco_document->record_count();
+  $variables['search_view'] = $_ebsco_document->search_view();
+  $variables['search_time'] = $_ebsco_document->search_time();
+  $variables['relatedContent'] = $_ebsco_document->relatedContent();
+  $variables['autoSuggestTerms'] = $_ebsco_document->autoSuggestTerms();
+  $variables['lookfor'] = '';
+  if (isset($params['lookfor'])) {
+    $variables['lookfor'] = $params['lookfor'];
+  }
+  elseif (isset($params['group'])) {
+    $types = EBSCODocument::basic_search_type_options();
+    foreach ($params['group'] as $key => $group) {
+      if (!empty($group['lookfor'])) {
+        $pre = $key == 0 ? '' : " {$group['bool']} ";
+        $variables['lookfor'] .= $pre . $types[$group['type']] . ':' . $group['lookfor'];
+      }
     }
+  }
+  $variables['pager'] = $_ebsco_document->pager();
 
-    $title = !empty($params['lookfor']) ? ' - ' . $params['lookfor'] : '';
-    drupal_set_title('Search results' . $title);
+  $v1 = drupal_get_form('ebsco_sort_form');
+  $variables['sort_form'] = drupal_render($v1);
 
-    $Document->search();
-
-    $variables['records'] = $Document->records();
-    $variables['record_start'] = $Document->record_start();
-    $variables['record_end'] = $Document->record_end();
-    $variables['record_count'] = $Document->record_count();
-    $variables['search_view'] = $Document->search_view();
-    $variables['search_time'] = $Document->search_time();
-    $variables['relatedContent'] = $Document->relatedContent();
-    $variables['autoSuggestTerms'] = $Document->autoSuggestTerms();
-    $variables['lookfor'] = '';
-    if (isset($params['lookfor'])) {
-        $variables['lookfor'] = $params['lookfor'];
-    } else if (isset($params['group'])) {
-        $types = EBSCODocument::basic_search_type_options();
-        foreach ($params['group'] as $key => $group) {
-            if (!empty($group['lookfor'])) {
-                $pre = $key == 0 ? '' : " {$group['bool']} ";
-                $variables['lookfor'] .= $pre . $types[$group['type']] . ':' . $group['lookfor'];
-            }
-        }
-    }
-    $variables['pager'] = $Document->pager();
-
-	$v1=drupal_get_form('ebsco_sort_form');
-    $variables['sort_form'] = drupal_render($v1);
-
-    // Save data needed by scroller in Detailed view page
-    //$Document->search_write();
+  // Save data needed by scroller in Detailed view page
+  // $_ebsco_document->search_write();
 }
-
 
 /**
  * Process variables for ebsco-basic-search.tpl.php.
@@ -930,30 +931,30 @@ function template_preprocess_ebsco_results(&$variables) {
  * @see ebsco-basic-search.tpl.php
  */
 function template_preprocess_ebsco_basic_search(&$variables) {
-    global $Document;
-    $params = $_REQUEST;
+  global $_ebsco_document;
+  $params = $_REQUEST;
 
-    if (empty($Document)) {
-        $Document = new EBSCODocument();
-    }
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
+  }
 
-    $variables['search_view'] = $Document->search_view();
-    $variables['lookfor'] = '';
-    if (isset($params['lookfor'])) {
-        $variables['lookfor'] = $params['lookfor'];
-    } else if (isset($params['group'])) {
-        $types = EBSCODocument::basic_search_type_options();
-        foreach ($params['group'] as $key => $group) {
-            if (!empty($group['lookfor'])) {
-                $pre = $key == 0 ? '' : " {$group['bool']} ";
-                $variables['lookfor'] .= $pre . $types[$group['type']] . ':' . $group['lookfor'];
-            }
-        }
+  $variables['search_view'] = $_ebsco_document->search_view();
+  $variables['lookfor'] = '';
+  if (isset($params['lookfor'])) {
+    $variables['lookfor'] = $params['lookfor'];
+  }
+  elseif (isset($params['group'])) {
+    $types = EBSCODocument::basic_search_type_options();
+    foreach ($params['group'] as $key => $group) {
+      if (!empty($group['lookfor'])) {
+        $pre = $key == 0 ? '' : " {$group['bool']} ";
+        $variables['lookfor'] .= $pre . $types[$group['type']] . ':' . $group['lookfor'];
+      }
     }
-	$v1=drupal_get_form('ebsco_basic_search_form');
-    $variables['search_form'] = drupal_render($v1);
+  }
+  $v1 = drupal_get_form('ebsco_basic_search_form');
+  $variables['search_form'] = drupal_render($v1);
 }
-
 
 /**
  * Process variables for ebsco-advanced-search.tpl.php.
@@ -961,19 +962,18 @@ function template_preprocess_ebsco_basic_search(&$variables) {
  * @see ebsco-advanced-search.tpl.php
  */
 function template_preprocess_ebsco_advanced_search(&$variables) {
-    drupal_add_library('system','ui.slider');
-    global $Document;
-    $params = $_REQUEST;
+  drupal_add_library('system', 'ui.slider');
+  global $_ebsco_document;
+  $params = $_REQUEST;
 
-    if (empty($Document)) {
-        $Document = new EBSCODocument();
-    }
-    $Document->info();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
+  }
+  $_ebsco_document->info();
 
-	$v1=drupal_get_form('ebsco_advanced_search_form');
-    $variables['search_form'] = drupal_render($v1);
+  $v1 = drupal_get_form('ebsco_advanced_search_form');
+  $variables['search_form'] = drupal_render($v1);
 }
-
 
 /**
  * Process variables for ebsco-result.tpl.php.
@@ -981,23 +981,22 @@ function template_preprocess_ebsco_advanced_search(&$variables) {
  * @see ebsco-result.tpl.php
  */
 function template_preprocess_ebsco_result(&$variables) {
-    $params = $_REQUEST;
-    $params['op'] = isset($params['op']) ? $params['op'] : 'Next';
+  $params = $_REQUEST;
+  $params['op'] = isset($params['op']) ? $params['op'] : 'Next';
 
-    $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
-    if (empty($Document)) {
-        $Document = new EBSCODocument();
-    }
-    $Document->retrieve();
-    $record = $Document->record();
+  $_SESSION['EBSCO']['redirect'] = drupal_get_destination();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
+  }
+  $_ebsco_document->retrieve();
+  $record = $_ebsco_document->record();
 
-    $variables['record'] = $record;
-    $lastSearch = isset($params['id']) ? $Document->search_read($params['id'], $params['op']) : '';
-    $variables['last_search'] = $lastSearch;
+  $variables['record'] = $record;
+  $lastSearch = isset($params['id']) ? $_ebsco_document->search_read($params['id'], $params['op']) : '';
+  $variables['last_search'] = $lastSearch;
 
-    drupal_set_title($record->title);
+  drupal_set_title($record->title);
 }
-
 
 /**
  * Process variables for ebsco-side-facets.tpl.php.
@@ -1005,61 +1004,64 @@ function template_preprocess_ebsco_result(&$variables) {
  * @see ebsco-side-facets.tpl.php
  */
 function template_preprocess_ebsco_side_facets(&$variables) {
-    global $Document;
+  global $_ebsco_document;
 
-    if (empty($Document)) {
-        $Document = new EBSCODocument();
-    }
-    $Document->info();
+  if (empty($_ebsco_document)) {
+    $_ebsco_document = new EBSCODocument();
+  }
+  $_ebsco_document->info();
 
-    $variables['record_count'] = $Document->record_count();
-    $variables['expanders'] = $Document->expanders();
-    $variables['limiters'] = $Document->limiters();
-    $variables['facets'] = $Document->facets();
-    $variables['filters'] = $Document->filters();     // applied facets, limiters or expanders
-    $variables['search_params'] = $Document->search_params(); // hidden parameters
-    $variables['link_search_params'] = $Document->link_search_params(); // hidden parameters
+  $variables['record_count'] = $_ebsco_document->record_count();
+  $variables['expanders'] = $_ebsco_document->expanders();
+  $variables['limiters'] = $_ebsco_document->limiters();
+  $variables['facets'] = $_ebsco_document->facets();
+  // Applied facets, limiters or expanders.
+  $variables['filters'] = $_ebsco_document->filters();
+  // Hidden parameters.
+  $variables['search_params'] = $_ebsco_document->search_params();
+  // Hidden parameters.
+  $variables['link_search_params'] = $_ebsco_document->link_search_params();
 }
-
-
 
 /******************************************
  * View Helpers
  ******************************************/
 
 /**
- * Returns an URL without the given filter parameter
+ * Returns the current request's URL without the specified filter parameter.
  *
  * @return string
+ *   the filtered request URL
  */
-function remove_filter_link($filter)
-{
-    $params = $_REQUEST;
-    if (isset($params['filter'])) {
-        foreach($params['filter'] as $key => $value) {
-            if ($value == $filter['action']) {
-                unset($params['filter'][$key]);
-            }
-        }
+function remove_filter_link($filter) {
+  $params = $_REQUEST;
+  if (isset($params['filter'])) {
+    foreach ($params['filter'] as $key => $value) {
+      if ($value == $filter['action']) {
+        unset($params['filter'][$key]);
+      }
     }
-    return url('ebsco/results', array('query' => $params));
+  }
+  return url('ebsco/results', array('query' => $params));
 }
 
-
 /**
-  * Performs a regex and replaces any url's with links containing themselves as the text
-  *
-  * @return string
-  */
-function auto_link($string)
-{
-    $linkedString = preg_replace_callback(
-        "/\b(https?):\/\/([-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]*)\b/i",
-        create_function(
-            '$matches',
-            'return "<a href=\'".($matches[0])."\'>".($matches[0])."</a>";'
-        ),
-        $string
-    );
-    return $linkedString;
+ * Convert URLs in the given string into HTML link tags.
+ *
+ * Performs a regex and replaces any URLs with links containing themselves
+ * as the text.
+ *
+ * @return string
+ *   the filtered request URL
+ */
+function auto_link($string) {
+  $linkedString = preg_replace_callback(
+    "/\b(https?):\/\/([-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]*)\b/i",
+    create_function(
+      '$matches',
+      'return "<a href=\'".($matches[0])."\'>".($matches[0])."</a>";'
+    ),
+    $string
+  );
+  return $linkedString;
 }
