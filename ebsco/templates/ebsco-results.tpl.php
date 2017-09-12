@@ -275,7 +275,7 @@
           echo "</p>";
         }
         elseif ($record->title){
-          echo '<a href="' . $recordUrl . '" class="title">' . $record->title . '</a>';
+          echo '<a href="' . $recordUrl . '" class="title _record_link">' . $record->title . '</a>';
         }
          ?>
       </div>
@@ -300,7 +300,7 @@
           echo '<cite>' . $record->summary . '</cite><br />';
         }
 
-        if (!empty($record->subjects) && !$hide_record_subject){
+        if (!empty($record->subjects)){
           echo '<strong>' . t('Subjects') . '</strong>:<span class="quotestart">' . str_replace('<br />', ', ', $record->subjects) . '</span>';
         }
 
