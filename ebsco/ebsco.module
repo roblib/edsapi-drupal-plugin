@@ -68,6 +68,10 @@ function ebsco_theme() {
     ),
     'ebsco_results' => array(
       'template' => 'templates/ebsco-results',
+      'variables' => array(
+        'trim_title' => FALSE,
+        'trim_authors' => FALSE,
+      ),
     ),
     'ebsco_side_facets' => array(
       'template' => 'templates/ebsco-side-facets',
@@ -216,6 +220,25 @@ function ebsco_admin() {
     '#required' => TRUE,
   );
 
+  $form['ebsco_general']['ebsco_title_trim'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Trim result Title'),
+    '#default_value' => variable_get('ebsco_title_trim', 0),
+    '#size' => 3,
+    '#maxlength' => 3,
+    '#description' => t('Title maximum number of characters to be displayed when an item is render in search result page.'),
+    '#required' => TRUE,
+  );
+
+  $form['ebsco_general']['ebsco_authors_trim'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Trim result Authors'),
+    '#default_value' => variable_get('ebsco_authors_trim', 0),
+    '#size' => 3,
+    '#maxlength' => 3,
+    '#description' => t('Authors maximum number of characters to be displayed when an item is render in search result page.'),
+    '#required' => TRUE,
+  );
   return system_settings_form($form);
 }
 
@@ -904,6 +927,9 @@ function template_preprocess_ebsco_results(&$variables) {
   $variables['relatedContent'] = $_ebsco_document->relatedContent();
   $variables['autoSuggestTerms'] = $_ebsco_document->autoSuggestTerms();
   $variables['lookfor'] = '';
+  $variables['trim_title'] = variable_get('ebsco_title_trim', 0);
+  $variables['trim_authors'] = variable_get('ebsco_authors_trim', 0);
+
   if (isset($params['lookfor'])) {
     $variables['lookfor'] = $params['lookfor'];
   }
