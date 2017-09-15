@@ -230,6 +230,16 @@
   <ol class="search-results ebsco">
   <?php foreach ($records as $record):
 
+    // Trim Title if needed.
+    if ($trim_title && strlen($record->title) > $trim_title) {
+      $record->title = truncate_utf8($record->title, $trim_title, TRUE, TRUE, 1);
+    }
+
+    // Trim Authors if needed.
+    if ($trim_authors && strlen($record->authors) > $trim_authors) {
+      $record->authors = truncate_utf8(implode(',',explode('<br />', $record->authors)), $trim_authors, TRUE, TRUE, 1);
+    }
+
     $id = check_plain($record->record_id());
     $recordUrl = url('ebsco/result', array('query' => array('id' => $id)));
     $fulltextUrl = url('ebsco/fulltext', array('query' => array('id' => $id)));
