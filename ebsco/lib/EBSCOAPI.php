@@ -413,7 +413,7 @@ class EBSCOAPI {
       $type = isset($search['index']) && !empty($search['index']) ? $search['index'] : 'AllFields';
 
       // Escape some characters from lookfor term.
-      $term = str_replace(array(',', ':', '(', ')'), array('\,', '\:', '\(', '\)'), $lookfor);
+      $term = str_replace(array(',', ':'), array('\,', '\:'), $lookfor);
       // Replace multiple consecutive empty spaces with one empty space.
       $term = preg_replace("/\s+/", ' ', $term);
 

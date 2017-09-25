@@ -133,6 +133,16 @@ class EBSCOResponse {
       $result = json_decode(json_encode($this->response->SearchResult->AutoSuggestedTerms), TRUE);;
       $autoSuggestTerms = $result;
     }
+    $queries = array();
+    if($this->response->SearchRequestGet->SearchCriteriaWithActions->QueriesWithAction){
+      $queriesWithAction = $this->response->SearchRequestGet->SearchCriteriaWithActions->QueriesWithAction->QueryWithAction;
+      foreach($queriesWithAction as $queryWithAction){
+        $queries[]=array(
+          'query' => (string)$queryWithAction->Query->Term,
+          'removeAction'=> (string) $queryWithAction->RemoveAction
+        );
+      }
+    }
 
     $results = array(
       'recordCount' => $hits,
@@ -143,6 +153,7 @@ class EBSCOResponse {
       'relatedContent'   => $relatedC,
       'autoSuggestTerms'   => $autoSuggestTerms,
       'facets'      => $facets,
+      'queries'     => $queries,
     );
 
     return $results;
@@ -164,7 +175,6 @@ class EBSCOResponse {
     $records = $this->response->SearchResult->Data->Records->Record;
     foreach ($records as $record) {
       $result = array();
-      // var_dump($record);
       $result['ResultId'] = $record->ResultId ? (integer) $record->ResultId : '';
       $result['DbId'] = $record->Header->DbId ? (string) $record->Header->DbId : '';
       $result['DbLabel'] = $record->Header->DbLabel ? (string) $record->Header->DbLabel : '';
@@ -183,7 +193,6 @@ class EBSCOResponse {
       else {
         $result['ImageInfo'] = '';
       }
-
       if ($record->FullText) {
         $availability = (integer) $record->FullText->Text->Availability == 1;
         $links = array();
@@ -237,6 +246,134 @@ class EBSCOResponse {
             'Group' => $group,
             'Data'  => $this->toHTML($data, $group),
           );
+        }
+      }
+
+      if($record->RecordInfo){
+        $result['RecordInfo'] = array();
+        $result['RecordInfo']['BibEntity']=array(
+          'Identifiers'=>array(),
+          'Languages'=>array(),
+          'PhysicalDescription'=>array(),
+          'Subjects'=>array(),
+          'Titles'=>array()
+        );
+
+        if($record->RecordInfo->BibRecord->BibEntity->Identifiers){
+          foreach($record->RecordInfo->BibRecord->BibEntity->Identifiers->Identifier as $identifier){
+            $type = $identifier->Type? (string) $identifier->Type:'';
+            $value = $identifier->Value? (string) $identifier->Value:'';
+            $result['RecordInfo']['BibEntity']['Identifiers'][]= array(
+              'Type'=>$type,
+              'Value'=>$value
+            );
+          }
+        }
+
+        if($record->RecordInfo->BibRecord->BibEntity->Languages){
+          foreach($record->RecordInfo->BibRecord->BibEntity->Languages->Language as $language){
+            $code = $language->Code? (string)$language->Code:'';
+            $text = $language->Text? (string)$language->Text:'';
+            $result['RecordInfo']['BibEntity']['Languages'][]= array(
+              'Code'=>$code,
+              'Text'=>$text
+            );
+          }
+        }
+
+        if($record->RecordInfo->BibRecord->BibEntity->PhysicalDescription){
+          $pageCount = $record->RecordInfo->BibRecord->BibEntity->PhysicalDescription->Pagination->PageCount? (string) $record->RecordInfo->BibRecord->BibEntity->PhysicalDescription->Pagination->PageCount:'';
+          $startPage = $record->RecordInfo->BibRecord->BibEntity->PhysicalDescription->Pagination->StartPage? (string) $record->RecordInfo->BibRecord->BibEntity->PhysicalDescription->Pagination->StartPage:'';
+          $result['RecordInfo']['BibEntity']['PhysicalDescription']['Pagination'] = $pageCount;
+          $result['RecordInfo']['BibEntity']['PhysicalDescription']['StartPage'] = $startPage;
+        }
+
+        if($record->RecordInfo->BibRecord->BibEntity->Subjects){
+          foreach($record->RecordInfo->BibRecord->BibEntity->Subjects->Subject as $subject){
+            $subjectFull = $subject->SubjectFull? (string)$subject->SubjectFull:'';
+            $type = $subject->Type? (string)$subject->Type:'';
+            $result['RecordInfo']['BibEntity']['Subjects'][]=array(
+              'SubjectFull'=>$subjectFull,
+              'Type'=>$type
+            );
+          }
+        }
+
+        if($record->RecordInfo->BibRecord->BibEntity->Titles){
+          foreach($record->RecordInfo->BibRecord->BibEntity->Titles->Title as $title){
+            $titleFull = $title->TitleFull? (string)$title->TitleFull:'';
+            $type = $title->Type? (string)$title->Type:'';
+            $result['RecordInfo']['BibEntity']['Titles'][]=array(
+              'TitleFull'=>$titleFull,
+              'Type'=>$type
+            );
+          }
+        }
+
+        $result['RecordInfo']['BibRelationships']=array(
+          'HasContributorRelationships'=>array(),
+          'IsPartOfRelationships'=>array()
+        );
+
+        if($record->RecordInfo->BibRecord->BibRelationships->HasContributorRelationships){
+          foreach($record->RecordInfo->BibRecord->BibRelationships->HasContributorRelationships->HasContributor as $contributor){
+            $nameFull = $contributor->PersonEntity->Name->NameFull? (string)$contributor->PersonEntity->Name->NameFull:'';
+            $result['RecordInfo']['BibRelationships']['HasContributorRelationships'][]=array(
+              'NameFull'=>$nameFull
+            );
+          }
+        }
+
+        if($record->RecordInfo->BibRecord->BibRelationships){
+          foreach($record->RecordInfo->BibRecord->BibRelationships->IsPartOfRelationships->IsPartOf as $relationship){
+            if($relationship->BibEntity->Dates){
+              foreach($relationship->BibEntity->Dates->Date as $date){
+                $d = $date->D? (string)$date->D:'';
+                $m = $date->M? (string)$date->M:'';
+                $type = $date->Type? (string)$date->Type:'';
+                $y = $date->Y? (string)$date->Y:'';
+                $result['RecordInfo']['BibRelationships']['IsPartOfRelationships']['date'][] = array(
+                  'D'=> $d,
+                  'M'=>$m,
+                  'Type'=>$type,
+                  'Y'=>$y
+                );
+              }
+            }
+
+            if($relationship->BibEntity->Identifiers){
+              foreach($relationship->BibEntity->Identifiers->Identifier as $identifier){
+                $type = $identifier->Type? (string) $identifier->Type :'';
+                $value = $identifier->Value? (string) $identifier->Value:'';
+                $result['RecordInfo']['BibRelationships']['IsPartOfRelationships']['Identifiers'][]=array(
+                  'Type'=>$type,
+                  'Value'=>$value
+                );
+              }
+            }
+
+            if($relationship->BibEntity->Titles){
+              foreach($relationship->BibEntity->Titles->Title as $title){
+                $titleFull = $title->TitleFull? (string)$title->TitleFull:'';
+                $type = $title->Type? (string)$title->Type:'';
+                $result['RecordInfo']['BibRelationships']['IsPartOfRelationships']['Titles'][]=array(
+                  'TitleFull' => $titleFull,
+                  'Type'=>$type
+                );
+              }
+            }
+
+            if($relationship->BibEntity->Numbering){
+              foreach($relationship->BibEntity->Numbering->Number as $number){
+                $type = (string)$number->Type;
+                $value= (string)$number->Value;
+                $result['RecordInfo']['BibRelationships']['IsPartOfRelationships']['numbering'][] = array(
+                  'Type'=> $type,
+                  'Value'=>$value
+                );
+              }
+            }
+          }
         }
       }
 
@@ -505,6 +642,7 @@ class EBSCOResponse {
     // Any group can be added here, but we only use Au (Author)
     // Other groups, not present here, won't be transformed to HTML links.
     $allowed_searchlink_groups = array('au');
+    $allowed_link_groups = array('URL', 'url');
 
     // Map xml tags to the HTML tags
     // This is just a small list, the total number of xml tags is far more greater.
@@ -584,6 +722,14 @@ class EBSCOResponse {
         }
       }
 
+      // Parse link
+      if (!empty($group) && in_array($group, $allowed_link_groups)) {
+        $link_xml = '/<link linkTarget="([^"]*)" linkTerm="([^"]*)" linkWindow="([^"]*)">/';
+        $link_html = "<a name=\"$1\" href=\"$2\" target=\"$3\">";  //replaced $path with "result.php"
+        $data = preg_replace($link_xml, $link_html, $data);
+        $data = str_replace('</link>', '</a>', $data);
+      }
+
       // Replace the rest of searchLinks with simple spans.
       $link_xml = '/<searchLink fieldCode="([^\"]*)" term="%22([^\"]*)%22">/';
       $link_html = '<span>';
@@ -600,5 +746,4 @@ class EBSCOResponse {
 
     return $data;
   }
-
 }
