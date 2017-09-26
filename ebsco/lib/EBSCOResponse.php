@@ -183,6 +183,8 @@ class EBSCOResponse {
       $result['AccessLevel'] = $record->Header->AccessLevel ? (string) $record->Header->AccessLevel : '';
       $result['id'] = $result['An'] . '|' . $result['DbId'];
       $result['PLink'] = $record->PLink ? (string) $record->PLink : '';
+      $result['PDF'] = $record->FullText->Links ? (string) $record->FullText->Links->Link->Type : '';
+      $result['HTML'] = $record->FullText->Text->Availability? (string) $record->FullText->Text->Availability : '';
       if (!empty($record->ImageInfo->CoverArt)) {
         foreach ($record->ImageInfo->CoverArt as $image) {
           $size = (string) $image->Size;
