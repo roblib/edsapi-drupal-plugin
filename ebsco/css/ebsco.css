@@ -397,7 +397,7 @@
 
 
 /** Icons ***/
-
+/**
 .icon {
   background: url("../images/sprites_32.png") no-repeat top left;
   height: 32px;
@@ -444,6 +444,7 @@
 .icon16.tick {
   background-position: 0 -171px;
 }
+*/
 
 
 /*  RS, EMP carousel */
