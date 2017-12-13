@@ -412,8 +412,6 @@ BODY;
     // Send the request.
     try {
       $response = drupal_http_request($url, $options);
-      // print_r($url);
-      // print_r($response);
       $code = $response->code;
       if (isset($response->headers['content-encoding'])) {
         if ($response->headers['content-encoding'] == 'gzip') {

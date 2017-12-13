@@ -5,4 +5,4 @@ core = 7.x
 configure = admin/config/search/ebsco
 
 stylesheets[screen][] = css/ebsco.css
-scripts[] = js/ebsco.js
+;scripts[] = js/ebsco.js
